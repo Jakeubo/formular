@@ -8,6 +8,12 @@ use Illuminate\Support\Facades\Http;
 
 class OrderController extends Controller
 {
+    public function show(\App\Models\Order $order)
+{
+    return response()->json($order);
+}
+
+
     public function store(Request $request)
     {
         // Honeypot

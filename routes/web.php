@@ -5,6 +5,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\InvoiceController;
 
+Route::get('/orders/{order}', function (\App\Models\Order $order) {
+    return response()->json($order);
+});
+
+
 Route::middleware(['auth'])->group(function () {
     Route::resource('invoices', InvoiceController::class);
 });

@@ -12,9 +12,10 @@
                 <div class="p-6">
                     <!-- Tlačítko otevření modalu -->
                     <button onclick="openInvoiceModal()"
-                        class="bg-pink-500 text-white px-4 py-2 rounded shadow hover:bg-pink-600">
+                        class="bg-blue-500 text-white px-4 py-2 rounded">
                         ➕ Nová faktura
                     </button>
+
 
                     <table class="w-full mt-6 border border-gray-200">
                         <thead class="bg-gray-100">
