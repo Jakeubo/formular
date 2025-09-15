@@ -15,8 +15,9 @@ Route::get('/', function () {
 
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 
+
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return redirect()->route('invoices.index');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

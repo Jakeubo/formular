@@ -11,9 +11,15 @@ class InvoiceController extends Controller
 {
     public function index()
     {
-        $invoices = Invoice::with('customer')->latest()->paginate(10);
-        return view('invoices.index', compact('invoices'));
+        $invoices = Invoice::with('order')->paginate(10);
+
+        // seznam objednávek, ze kterých půjde vybrat zákazníka
+        $orders = \App\Models\Order::orderBy('created_at', 'desc')->get();
+        $invoices = Invoice::with('order')->paginate(10);
+
+        return view('invoices.index', compact('invoices', 'orders'));
     }
+
 
     public function create()
     {
@@ -23,41 +29,31 @@ class InvoiceController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'customer_id' => 'required',
-            'items.*.description' => 'required|string',
-            'items.*.qty' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
-        ]);
-
-        // Vytvoří fakturu
         $invoice = Invoice::create([
-            'invoice_number' => 'INV-' . time(),
-            'customer_id' => $request->customer_id,
-            'status' => 'new',
-            'total_price' => 0,
-            'payment_status' => 'unpaid',
-            'due_date' => now()->addDays(14)
+            'order_id'       => $request->order_id,
+            'invoice_number' => $request->invoice_number,
+            'issue_date'     => $request->issue_date,
+            'due_date'       => $request->due_date,
+            'status'         => $request->status,
+            'total_price'    => collect($request->items)->sum(function ($item) {
+                return $item['quantity'] * $item['unit_price'];  // 👈 jen unit_price
+            }),
         ]);
 
-        $total = 0;
-
+        // uložení položek faktury
         foreach ($request->items as $item) {
-            $itemTotal = $item['qty'] * $item['unit_price'];
-            InvoiceItem::create([
-                'invoice_id' => $invoice->id,
+            $invoice->items()->create([
                 'description' => $item['description'],
-                'qty' => $item['qty'],
-                'unit_price' => $item['unit_price'],
-                'total' => $itemTotal
+                'quantity'    => $item['quantity'],
+                'unit_price'  => $item['unit_price'],             // 👈 musí tam být
+                'vat_rate'    => 21.00,
+                'total'       => $item['quantity'] * $item['unit_price'],
             ]);
-            $total += $itemTotal;
         }
 
-        $invoice->update(['total_price' => $total]);
-
-        return redirect()->route('invoices.index')->with('success', 'Faktura byla vytvořena');
+        return redirect()->route('invoices.index')->with('success', 'Faktura byla vytvořena.');
     }
+
 
     public function show(Invoice $invoice)
     {
@@ -73,36 +69,38 @@ class InvoiceController extends Controller
     }
 
     public function update(Request $request, Invoice $invoice)
-    {
-        $request->validate([
-            'customer_id' => 'required',
-            'items.*.description' => 'required|string',
-            'items.*.qty' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
+{
+    $request->validate([
+        'customer_id' => 'required',
+        'items.*.description' => 'required|string',
+        'items.*.quantity' => 'required|integer|min:1',   // 👈 opraveno
+        'items.*.unit_price' => 'required|numeric|min:0',
+    ]);
+
+    $invoice->update([
+        'customer_id' => $request->customer_id,
+    ]);
+
+    $invoice->items()->delete();
+    $total = 0;
+
+    foreach ($request->items as $item) {
+        $itemTotal = $item['quantity'] * $item['unit_price'];  // 👈 opraveno
+        $invoice->items()->create([
+            'description' => $item['description'],
+            'quantity'    => $item['quantity'],                // 👈 opraveno
+            'unit_price'  => $item['unit_price'],
+            'vat_rate'    => 21.00,
+            'total'       => $itemTotal,
         ]);
-
-        $invoice->update([
-            'customer_id' => $request->customer_id,
-        ]);
-
-        $invoice->items()->delete();
-        $total = 0;
-
-        foreach ($request->items as $item) {
-            $itemTotal = $item['qty'] * $item['unit_price'];
-            $invoice->items()->create([
-                'description' => $item['description'],
-                'qty' => $item['qty'],
-                'unit_price' => $item['unit_price'],
-                'total' => $itemTotal
-            ]);
-            $total += $itemTotal;
-        }
-
-        $invoice->update(['total_price' => $total]);
-
-        return redirect()->route('invoices.index')->with('success', 'Faktura byla upravena');
+        $total += $itemTotal;
     }
+
+    $invoice->update(['total_price' => $total]);
+
+    return redirect()->route('invoices.index')->with('success', 'Faktura byla upravena');
+}
+
 
     public function destroy(Invoice $invoice)
     {

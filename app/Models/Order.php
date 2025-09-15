@@ -22,4 +22,9 @@ protected $fillable = [
     'carrier_address',
     'country',
 ];
+public function invoices()
+{
+    return $this->hasMany(Invoice::class);
+}
+
 }

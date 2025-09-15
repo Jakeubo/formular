@@ -9,14 +9,9 @@ class InvoiceItem extends Model
     protected $fillable = [
         'invoice_id',
         'description',
-        'qty',
-        'unit_price',
-        'total'
+        'quantity',
+        'unit_price',   // 👈 musí tu být
+        'vat_rate',
+        'total',
     ];
-
-    // Položka patří faktuře
-    public function invoice()
-    {
-        return $this->belongsTo(Invoice::class);
-    }
 }

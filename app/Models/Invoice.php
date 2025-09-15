@@ -21,9 +21,9 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
-    // Faktura patří zákazníkovi
-    public function customer()
+    
+    public function order()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Order::class);
     }
 }
