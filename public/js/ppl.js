@@ -11,21 +11,19 @@ document.addEventListener("DOMContentLoaded", function () {
         carrierIdInput.value = "";
         carrierAddressInput.value = "";
         selectedText.textContent = "";
-        selectedText.classList.add("hidden"); // ✅ schová badge
-        modal.style.display = "none";
+        selectedText.classList.add("hidden");
+        modal.classList.add("hidden");
     }
 
     listbox.addEventListener("change", function () {
         if (listbox.value === "PplParcelshop") {
-            modal.style.display = "block";
+            modal.classList.remove("hidden"); // ✅ používáme Tailwind, ne style.display
         } else {
             resetPpl();
         }
     });
 
-    closeModal.addEventListener("click", function () {
-        resetPpl();
-    });
+    closeModal.addEventListener("click", resetPpl);
 
     window.addEventListener("click", function (event) {
         if (event.target === modal) {
@@ -37,14 +35,13 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("ppl-parcelshop-map", function (event) {
         if (event.detail) {
             const detail = event.detail;
-
             carrierIdInput.value = detail.id || detail.code || "";
             carrierAddressInput.value = `${detail.name}, ${detail.street}, ${detail.city}`;
 
-            selectedText.classList.remove("hidden"); // ✅ zobrazí badge
+            selectedText.classList.remove("hidden");
             selectedText.textContent = `📦 Vybráno PPL výdejna: ${carrierAddressInput.value}`;
 
-            modal.style.display = "none";
+            modal.classList.add("hidden");
         }
     });
 });
