@@ -9,22 +9,25 @@ class Order extends Model
 {
     use HasFactory;
 
-protected $fillable = [
-    'first_name',
-    'last_name',
-    'email',
-    'phone',
-    'address',
-    'city',
-    'zip',
-    'carrier',
-    'carrier_id',
-    'carrier_address',
-    'country',
-];
-public function invoices()
-{
-    return $this->hasMany(Invoice::class);
-}
-
+    protected $fillable = [
+        'first_name',
+        'last_name',
+        'email',
+        'phone',
+        'address',
+        'city',
+        'zip',
+        'carrier',
+        'carrier_id',
+        'carrier_address',
+        'country',
+    ];
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 }

@@ -8,22 +8,27 @@ class Invoice extends Model
 {
     protected $fillable = [
         'invoice_number',
+        'order_id',       // ← přidat
         'customer_id',
+        'issue_date',     // ← přidat
+        'due_date',
         'total_price',
         'status',
-        'due_date',
-        'payment_status'
+        'payment_status',
     ];
 
-    // Faktura má víc položek
     public function items()
     {
         return $this->hasMany(InvoiceItem::class);
     }
 
-    
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
     }
 }

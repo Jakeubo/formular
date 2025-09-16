@@ -8,13 +8,46 @@ use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
 {
+
+    public function send(Invoice $invoice)
+{
+    // tady později dáš logiku pro odeslání faktury e-mailem
+    return back()->with('success', "Faktura {$invoice->invoice_number} byla odeslána.");
+}
+
+public function download(Invoice $invoice)
+{
+    // zatím jen dummy – třeba stáhne JSON, později uděláme PDF
+    return response()->json([
+        'invoice' => $invoice->invoice_number,
+        'total' => $invoice->total_price,
+    ]);
+}
+
     public function index()
     {
-        $orders = Order::orderBy('created_at', 'desc')->get();
-        $invoices = Invoice::with('order')->paginate(10);
+        // faktury včetně přiřazené objednávky – nejnovější první
+        $invoices = Invoice::with('order')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        // seznam objednávek pro select v modalu
+        $orders = \App\Models\Order::orderBy('created_at', 'desc')->get();
 
         return view('invoices.index', compact('invoices', 'orders'));
     }
+
+    public function markAsPaid(Invoice $invoice)
+    {
+        $invoice->update([
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        return redirect()->route('invoices.index')->with('success', 'Faktura označena jako zaplacená.');
+    }
+
+
 
     public function create()
     {
@@ -24,15 +57,24 @@ class InvoiceController extends Controller
 
     public function store(Request $request)
     {
+        $order = \App\Models\Order::findOrFail($request->order_id);
+
+        // vygenerujeme variabilní symbol
+        $today = now()->format('Ymd');
+        $countToday = Invoice::whereDate('created_at', now()->toDateString())->count() + 1;
+        $variableSymbol = $today . str_pad($countToday, 2, '0', STR_PAD_LEFT);
+
         $invoice = Invoice::create([
-            'order_id'       => $request->order_id,
-            'invoice_number' => $request->invoice_number,
-            'issue_date'     => $request->issue_date,
-            'due_date'       => $request->due_date,
-            'status'         => $request->status,
-            'total_price'    => collect($request->items)->sum(function ($item) {
-                return $item['quantity'] * $item['unit_price'];
-            }),
+            'order_id'        => $order->id,
+            'customer_id'     => $order->customer_id,
+            'invoice_number'  => 'FA ' . $variableSymbol,
+            'variable_symbol' => $variableSymbol,
+            'issue_date'      => $request->issue_date,
+            'due_date'        => $request->due_date,
+            'status'          => 'new', // vždy defaultně Nová
+            'total_price'     => collect($request->items)->sum(
+                fn($item) => $item['quantity'] * $item['unit_price']
+            ),
         ]);
 
         foreach ($request->items as $item) {
@@ -48,12 +90,16 @@ class InvoiceController extends Controller
         return redirect()->route('invoices.index')->with('success', 'Faktura byla vytvořena.');
     }
 
+
+
+
     public function show(Invoice $invoice)
     {
+        // Načteme i související data
         $invoice->load('items', 'order');
+
         return view('invoices.show', compact('invoice'));
     }
-
     public function edit(Invoice $invoice)
     {
         $invoice->load('items');

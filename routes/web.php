@@ -5,9 +5,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\InvoiceController;
 
+
+Route::get('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
+Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
+
+
 Route::get('/orders/{order}', function (\App\Models\Order $order) {
     return response()->json($order);
 });
+
+Route::post('/invoices/{invoice}/paid', [InvoiceController::class, 'markAsPaid'])->name('invoices.paid');
 
 
 Route::middleware(['auth'])->group(function () {
