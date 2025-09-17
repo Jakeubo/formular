@@ -1,64 +1,143 @@
-{{-- resources/views/invoices/show.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800">
-            Detail faktury {{ $invoice->invoice_number }}
-        </h2>
+        <div class="flex items-center justify-between">
+            <a href="{{ route('invoices.index') }}"
+                class="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-xl shadow hover:bg-gray-900 transition">
+                ← Zpět na seznam
+            </a>
+            <h2 class="font-semibold text-2xl text-gray-900">
+                Detail faktury
+            </h2>
+        </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white p-6 rounded shadow">
-                <!-- Info o zákazníkovi -->
-                <h3 class="text-lg font-bold mb-2">Zákazník</h3>
+    <div class="py-10 bg-gray-50">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+
+            <!-- Horní karty -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    <!-- Levý sjednocený container -->
+    <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Kontaktní údaje -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Zákazník</h3>
                 @if($invoice->order)
-                    <p><strong>Jméno:</strong> {{ $invoice->order->first_name }} {{ $invoice->order->last_name }}</p>
-                    <p><strong>Email:</strong> {{ $invoice->order->email }}</p>
-                    <p><strong>Telefon:</strong> {{ $invoice->order->phone }}</p>
-                    <p><strong>Adresa:</strong> {{ $invoice->order->address }}, {{ $invoice->order->city }} {{ $invoice->order->zip }}</p>
-                    <p><strong>Dopravce:</strong> {{ $invoice->order->carrier }}</p>
-                    <p><strong>Výdejní místo:</strong> {{ $invoice->order->carrier_address }}</p>
+                    <dl class="space-y-2 text-sm text-gray-700">
+                        <div><dt class="font-medium">Jméno</dt><dd>{{ $invoice->order->first_name }} {{ $invoice->order->last_name }}</dd></div>
+                        <div><dt class="font-medium">Email</dt><dd>{{ $invoice->order->email }}</dd></div>
+                        <div><dt class="font-medium">Telefon</dt><dd>{{ $invoice->order->phone }}</dd></div>
+                        <div><dt class="font-medium">Adresa</dt><dd>{{ $invoice->order->address }}, {{ $invoice->order->zip }} {{ $invoice->order->city }}</dd></div>
+                        <div><dt class="font-medium">Země</dt><dd>{{ $invoice->order->country ?? 'ČR' }}</dd></div>
+                    </dl>
                 @else
-                    <em>Zákazník není přiřazen</em>
+                    <p class="italic text-gray-500">Zákazník není uveden</p>
                 @endif
+            </div>
 
-                <hr class="my-4">
+            <!-- Doprava -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Doprava</h3>
+                <dl class="space-y-2 text-sm text-gray-700">
+                    @if(!empty($invoice->order->carrier))
+                        <div><dt class="font-medium">Dopravce</dt><dd>{{ $invoice->order->carrier }}</dd></div>
+                    @endif
+                    @if(!empty($invoice->order->carrier_address))
+                        <div><dt class="font-medium">Výdejní místo / adresa</dt>
+                            <dd class="whitespace-pre-line">{{ $invoice->order->carrier_address }}</dd>
+                        </div>
+                    @endif
+                </dl>
+            </div>
+        </div>
+    </div>
 
-                <!-- Info o faktuře -->
-                <h3 class="text-lg font-bold mb-2">Faktura</h3>
-                <p><strong>Číslo faktury:</strong> {{ $invoice->invoice_number }}</p>
-                <p><strong>Datum vystavení:</strong> {{ $invoice->issue_date }}</p>
-                <p><strong>Datum splatnosti:</strong> {{ $invoice->due_date }}</p>
-                <p><strong>Stav:</strong> {{ $invoice->status }}</p>
-                <p><strong>Celková cena:</strong> {{ number_format($invoice->total_price, 2) }} Kč</p>
+    <!-- Pravý sjednocený container -->
+    <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                <hr class="my-4">
+            <!-- Základní údaje -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Základní údaje</h3>
+                <dl class="space-y-2 text-sm text-gray-700">
+                    <div>
+                        <dt class="font-medium">Číslo faktury</dt>
+                        <dd class="text-indigo-600 font-semibold">{{ $invoice->invoice_number }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium">Variabilní symbol</dt>
+                        <dd class="text-indigo-600 font-semibold">{{ $invoice->variable_symbol ?? '-' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium">Status</dt>
+                        <dd>
+                            @switch($invoice->status)
+                                @case('new') <span class="px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs">Nová</span> @break
+                                @case('sent') <span class="px-2 py-1 rounded-lg bg-blue-100 text-blue-700 text-xs">Odeslaná</span> @break
+                                @case('paid') <span class="px-2 py-1 rounded-lg bg-green-100 text-green-700 text-xs">Zaplacená</span> @break
+                                @case('overdue') <span class="px-2 py-1 rounded-lg bg-red-100 text-red-700 text-xs">Po splatnosti</span> @break
+                                @default <span class="px-2 py-1 rounded-lg bg-gray-200 text-gray-800 text-xs">{{ $invoice->status }}</span>
+                            @endswitch
+                        </dd>
+                    </div>
+                </dl>
+            </div>
 
-                <!-- Položky -->
-                <h3 class="text-lg font-bold mb-2">Položky</h3>
-                <table class="w-full border">
+            <!-- Termíny -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Termíny</h3>
+                <dl class="space-y-2 text-sm text-gray-700">
+                    <div>
+                        <dt class="font-medium">Datum vystavení</dt>
+                        <dd>{{ \Carbon\Carbon::parse($invoice->issue_date)->format('d.m.Y') }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium">Datum splatnosti</dt>
+                        <dd>{{ \Carbon\Carbon::parse($invoice->due_date)->format('d.m.Y') }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+            <!-- Akční tlačítka -->
+            <div class="flex flex-wrap gap-3">
+                <button class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-xl shadow-sm hover:bg-gray-50">✏️ Upravit</button>
+                <button class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700">✅ Uhradit</button>
+                <button class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700">📧 Poslat e-mail</button>
+                <button class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-xl shadow hover:bg-gray-700">⬇️ Stáhnout</button>
+                <button class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-xl shadow hover:bg-red-700">🗑️ Smazat</button>
+            </div>
+
+            <!-- Položky faktury -->
+            <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Položky</h3>
+                <table class="w-full text-sm border-collapse">
                     <thead>
-                        <tr class="bg-gray-100">
-                            <th class="px-2 py-1 border">Popis</th>
-                            <th class="px-2 py-1 border">Množství</th>
-                            <th class="px-2 py-1 border">Cena/ks</th>
-                            <th class="px-2 py-1 border">Celkem</th>
+                        <tr class="bg-gray-100 text-gray-700">
+                            <th class="px-2 py-2 text-center font-medium w-20">Kusy</th>
+                            <th class="px-3 py-2 text-left font-medium">Název položky</th>
+                            <th class="px-2 py-2 text-right font-medium w-32">Cena/ks</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-200">
                         @foreach($invoice->items as $item)
-                        <tr>
-                            <td class="border px-2 py-1">{{ $item->description }}</td>
-                            <td class="border px-2 py-1">{{ $item->quantity }}</td>
-                            <td class="border px-2 py-1">{{ number_format($item->unit_price, 2) }} Kč</td>
-                            <td class="border px-2 py-1">{{ number_format($item->total, 2) }} Kč</td>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-2 py-2 text-center">{{ $item->quantity }}</td>
+                            <td class="px-3 py-2">{{ $item->description }}</td>
+                            <td class="px-2 py-2 text-right">{{ number_format($item->unit_price, 2) }} Kč</td>
                         </tr>
                         @endforeach
                     </tbody>
                 </table>
 
-                <div class="mt-4">
-                    <a href="{{ route('invoices.index') }}" class="text-blue-600">⬅ Zpět na seznam</a>
+                <!-- Celková cena -->
+                <div class="mt-6 text-right text-xl font-bold text-gray-900">
+                    Celková cena: <span class="text-indigo-600">{{ number_format($invoice->total_price, 2) }} Kč</span>
                 </div>
             </div>
         </div>

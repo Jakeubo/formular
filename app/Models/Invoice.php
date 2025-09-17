@@ -8,13 +8,16 @@ class Invoice extends Model
 {
     protected $fillable = [
         'invoice_number',
-        'order_id',       // ← přidat
+        'order_id',
         'customer_id',
-        'issue_date',     // ← přidat
+        'issue_date',
         'due_date',
         'total_price',
         'status',
         'payment_status',
+        'variable_symbol',   // ← doplnit
+        'carrier',           // ← doporučené doplnit
+        'carrier_address',   // ← doporučené doplnit (pokud máš ve struktuře)
     ];
 
     public function items()

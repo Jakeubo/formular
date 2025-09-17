@@ -77,7 +77,8 @@
             <label class="block font-medium">Variabilní symbol</label>
             <input type="text" name="variable_symbol"
                 value="{{ now()->format('Ymd') . '01' }}"
-                class="w-full border rounded p-2 bg-gray-100" disabled>
+                class="w-full border rounded p-2 bg-gray-100" readonly>
+
         </div>
 
         <!-- Datum vystavení -->
