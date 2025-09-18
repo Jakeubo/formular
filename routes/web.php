@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\InvoiceController;
 
+use App\Http\Controllers\BankPaymentController;
+
+Route::get('/bank-payments', [BankPaymentController::class, 'index'])->name('bank-payments.index');
 
 Route::get('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
 Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
