@@ -15,102 +15,148 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
             <!-- Horní karty -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-    <!-- Levý sjednocený container -->
-    <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <!-- Kontaktní údaje -->
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Zákazník</h3>
-                @if($invoice->order)
-                    <dl class="space-y-2 text-sm text-gray-700">
-                        <div><dt class="font-medium">Jméno</dt><dd>{{ $invoice->order->first_name }} {{ $invoice->order->last_name }}</dd></div>
-                        <div><dt class="font-medium">Email</dt><dd>{{ $invoice->order->email }}</dd></div>
-                        <div><dt class="font-medium">Telefon</dt><dd>{{ $invoice->order->phone }}</dd></div>
-                        <div><dt class="font-medium">Adresa</dt><dd>{{ $invoice->order->address }}, {{ $invoice->order->zip }} {{ $invoice->order->city }}</dd></div>
-                        <div><dt class="font-medium">Země</dt><dd>{{ $invoice->order->country ?? 'ČR' }}</dd></div>
-                    </dl>
-                @else
-                    <p class="italic text-gray-500">Zákazník není uveden</p>
-                @endif
-            </div>
+                <!-- Levý sjednocený container -->
+                <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            <!-- Doprava -->
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Doprava</h3>
-                <dl class="space-y-2 text-sm text-gray-700">
-                    @if(!empty($invoice->order->carrier))
-                        <div><dt class="font-medium">Dopravce</dt><dd>{{ $invoice->order->carrier }}</dd></div>
-                    @endif
-                    @if(!empty($invoice->order->carrier_address))
-                        <div><dt class="font-medium">Výdejní místo / adresa</dt>
-                            <dd class="whitespace-pre-line">{{ $invoice->order->carrier_address }}</dd>
+                        <!-- Kontaktní údaje -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Zákazník</h3>
+                            @if($invoice->order)
+                            <dl class="space-y-2 text-sm text-gray-700">
+                                <div>
+                                    <dt class="font-medium">Jméno</dt>
+                                    <dd>{{ $invoice->order->first_name }} {{ $invoice->order->last_name }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-medium">Email</dt>
+                                    <dd>{{ $invoice->order->email }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-medium">Telefon</dt>
+                                    <dd>{{ $invoice->order->phone }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-medium">Adresa</dt>
+                                    <dd>{{ $invoice->order->address }}, {{ $invoice->order->zip }} {{ $invoice->order->city }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-medium">Země</dt>
+                                    <dd>{{ $invoice->order->country ?? 'ČR' }}</dd>
+                                </div>
+                            </dl>
+                            @else
+                            <p class="italic text-gray-500">Zákazník není uveden</p>
+                            @endif
                         </div>
-                    @endif
-                </dl>
-            </div>
-        </div>
-    </div>
 
-    <!-- Pravý sjednocený container -->
-    <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Doprava -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Doprava</h3>
+                            <dl class="space-y-2 text-sm text-gray-700">
+                                @if(!empty($invoice->order->carrier))
+                                <div>
+                                    <dt class="font-medium">Dopravce</dt>
+                                    <dd>{{ $invoice->order->carrier }}</dd>
+                                </div>
+                                @endif
+                                @if(!empty($invoice->order->carrier_address))
+                                <div>
+                                    <dt class="font-medium">Výdejní místo / adresa</dt>
+                                    <dd class="whitespace-pre-line">{{ $invoice->order->carrier_address }}</dd>
+                                </div>
+                                @endif
+                            </dl>
+                        </div>
+                    </div>
+                </div>
 
-            <!-- Základní údaje -->
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Základní údaje</h3>
-                <dl class="space-y-2 text-sm text-gray-700">
-                    <div>
-                        <dt class="font-medium">Číslo faktury</dt>
-                        <dd class="text-indigo-600 font-semibold">{{ $invoice->invoice_number }}</dd>
-                    </div>
-                    <div>
-                        <dt class="font-medium">Variabilní symbol</dt>
-                        <dd class="text-indigo-600 font-semibold">{{ $invoice->variable_symbol ?? '-' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="font-medium">Status</dt>
-                        <dd>
-                            @switch($invoice->status)
-                                @case('new') <span class="px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs">Nová</span> @break
-                                @case('sent') <span class="px-2 py-1 rounded-lg bg-blue-100 text-blue-700 text-xs">Odeslaná</span> @break
-                                @case('paid') <span class="px-2 py-1 rounded-lg bg-green-100 text-green-700 text-xs">Zaplacená</span> @break
-                                @case('overdue') <span class="px-2 py-1 rounded-lg bg-red-100 text-red-700 text-xs">Po splatnosti</span> @break
-                                @default <span class="px-2 py-1 rounded-lg bg-gray-200 text-gray-800 text-xs">{{ $invoice->status }}</span>
-                            @endswitch
-                        </dd>
-                    </div>
-                </dl>
-            </div>
+                <!-- Pravý sjednocený container -->
+                <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            <!-- Termíny -->
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Termíny</h3>
-                <dl class="space-y-2 text-sm text-gray-700">
-                    <div>
-                        <dt class="font-medium">Datum vystavení</dt>
-                        <dd>{{ \Carbon\Carbon::parse($invoice->issue_date)->format('d.m.Y') }}</dd>
+                        <!-- Základní údaje -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Základní údaje</h3>
+                            <dl class="space-y-2 text-sm text-gray-700">
+                                <div>
+                                    <dt class="font-medium">Číslo faktury</dt>
+                                    <dd class="text-indigo-600 font-semibold">{{ $invoice->invoice_number }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-medium">Variabilní symbol</dt>
+                                    <dd class="text-indigo-600 font-semibold">{{ $invoice->variable_symbol ?? '-' }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-medium">Status</dt>
+                                    <dd>
+                                        @switch($invoice->status)
+                                        @case('new') <span class="px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs">Nová</span> @break
+                                        @case('sent') <span class="px-2 py-1 rounded-lg bg-blue-100 text-blue-700 text-xs">Odeslaná</span> @break
+                                        @case('paid') <span class="px-2 py-1 rounded-lg bg-green-100 text-green-700 text-xs">Zaplacená</span> @break
+                                        @case('overdue') <span class="px-2 py-1 rounded-lg bg-red-100 text-red-700 text-xs">Po splatnosti</span> @break
+                                        @default <span class="px-2 py-1 rounded-lg bg-gray-200 text-gray-800 text-xs">{{ $invoice->status }}</span>
+                                        @endswitch
+                                    </dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        <!-- Termíny -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Termíny</h3>
+                            <dl class="space-y-2 text-sm text-gray-700">
+                                <div>
+                                    <dt class="font-medium">Datum vystavení</dt>
+                                    <dd>{{ \Carbon\Carbon::parse($invoice->issue_date)->format('d.m.Y') }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="font-medium">Datum splatnosti</dt>
+                                    <dd>{{ \Carbon\Carbon::parse($invoice->due_date)->format('d.m.Y') }}</dd>
+                                </div>
+                            </dl>
+                        </div>
                     </div>
-                    <div>
-                        <dt class="font-medium">Datum splatnosti</dt>
-                        <dd>{{ \Carbon\Carbon::parse($invoice->due_date)->format('d.m.Y') }}</dd>
-                    </div>
-                </dl>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
 
 
             <!-- Akční tlačítka -->
             <div class="flex flex-wrap gap-3">
-                <button class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-xl shadow-sm hover:bg-gray-50">✏️ Upravit</button>
-                <button class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700">✅ Uhradit</button>
-                <button class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700">📧 Poslat e-mail</button>
-                <button class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-xl shadow hover:bg-gray-700">⬇️ Stáhnout</button>
-                <button class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-xl shadow hover:bg-red-700">🗑️ Smazat</button>
+                <a href="{{ route('invoices.edit', $invoice) }}"
+                    class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-xl shadow-sm hover:bg-gray-50">
+                    ✏️ Upravit
+                </a>
+                <form action="{{ route('invoices.paid', $invoice) }}" method="POST" class="inline">
+                    @csrf
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700">
+                        ✅ Uhradit
+                    </button>
+                </form>
+
+                <a href="{{ route('invoices.send', $invoice) }}"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700">
+                    📧 Poslat e-mail
+                </a>
+
+                <a href="{{ route('invoices.download', $invoice) }}"
+                    class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-xl shadow hover:bg-gray-700">
+                    ⬇️ Stáhnout
+                </a>
+
+                <form action="{{ route('invoices.destroy', $invoice) }}" method="POST" class="inline"
+                    onsubmit="return confirm('Opravdu smazat tuto fakturu?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-xl shadow hover:bg-red-700">
+                        🗑️ Smazat
+                    </button>
+                </form>
+
             </div>
 
             <!-- Položky faktury -->

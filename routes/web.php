@@ -7,6 +7,9 @@ use App\Http\Controllers\InvoiceController;
 
 use App\Http\Controllers\BankPaymentController;
 
+Route::resource('invoices', App\Http\Controllers\InvoiceController::class);
+
+
 Route::get('/bank-payments', [BankPaymentController::class, 'index'])->name('bank-payments.index');
 
 Route::get('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');

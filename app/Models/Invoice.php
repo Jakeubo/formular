@@ -15,9 +15,16 @@ class Invoice extends Model
         'total_price',
         'status',
         'payment_status',
-        'variable_symbol',   // ← doplnit
-        'carrier',           // ← doporučené doplnit
-        'carrier_address',   // ← doporučené doplnit (pokud máš ve struktuře)
+        'variable_symbol',
+        'carrier',
+        'carrier_address',
+        'paid_at', // doporučuji přidat, pokud je ve struktuře DB
+    ];
+
+    protected $casts = [
+        'issue_date' => 'date',
+        'due_date'   => 'date',
+        'paid_at'    => 'datetime',
     ];
 
     public function items()
