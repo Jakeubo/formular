@@ -1,2 +1,41 @@
-*
-!.gitignore
+# Laravel & PHP
+/vendor
+/node_modules
+/.env
+/.env.*.php
+/.env.backup
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+composer.lock
+
+# Laravel cache & logs
+/public/hot
+/public/storage
+/storage/*.key
+/storage/app/public
+/storage/framework/*
+/storage/logs/*
+
+# Laravel IDE helpers & config
+/.phpunit.result.cache
+/.phpunit.cache
+.phpactor.json
+
+# Laravel IDE / editor configs
+/.vscode
+/.idea
+/.fleet
+/.zed
+/.nova
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Build outputs
+/public/build
+
+# Tools
+bfg-*.jar
