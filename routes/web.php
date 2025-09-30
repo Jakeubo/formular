@@ -9,10 +9,20 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\LabelController;
 use App\Http\Controllers\DashboardController;
 
+use Illuminate\Support\Facades\URL;
+
+Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])
+    ->name('invoices.download')
+    ->middleware('signed');
+
+
 // 🏠 Domovská stránka = veřejný formulář
 Route::get('/', fn () => view('order-form'))->name('form');
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 
+// // 📑 Faktury – veřejné stažení
+// Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])
+//     ->name('invoices.download');
 
 // … nahoře
 Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
@@ -45,7 +55,7 @@ Route::middleware(['auth'])->group(function () {
 
     // 📑 Faktury
     Route::get('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
-    Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
+    // Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
     Route::post('/invoices/{invoice}/paid', [InvoiceController::class, 'markAsPaid'])->name('invoices.paid');
     Route::resource('invoices', InvoiceController::class);
 

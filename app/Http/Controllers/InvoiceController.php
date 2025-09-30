@@ -17,47 +17,55 @@ class InvoiceController extends Controller
 {
 
 
-    public function send(Invoice $invoice)
-    {
-        $invoice->load('items', 'order');
+public function send(Invoice $invoice)
+{
+    $invoice->load('items', 'order');
 
-        // Připrav QR kód
-        $iban = 'CZ2408000000004396484053';
-        $amount = number_format($invoice->total_price, 2, '.', '');
-        $vs = $invoice->variable_symbol;
-        $msg = iconv('UTF-8', 'ASCII//TRANSLIT', 'Faktura ' . $invoice->invoice_number);
+    // Připrav QR kód
+    $iban = 'CZ2408000000004396484053';
+    $amount = number_format($invoice->total_price, 2, '.', '');
+    $vs = $invoice->variable_symbol;
+    $msg = iconv('UTF-8', 'ASCII//TRANSLIT', 'Faktura ' . $invoice->invoice_number);
 
-        $qrString = "SPD*1.0*ACC:$iban*AM:$amount*CC:CZK*X-VS:$vs*MSG:$msg";
+    $qrString = "SPD*1.0*ACC:$iban*AM:$amount*CC:CZK*X-VS:$vs*MSG:$msg";
 
-        $qrCode = base64_encode(
-            \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
-                ->size(300)
-                ->errorCorrection('M')
-                ->generate($qrString)
+    $qrCode = base64_encode(
+        \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+            ->size(300)
+            ->errorCorrection('M')
+            ->generate($qrString)
+    );
+
+    // Generuj PDF (zatím jen do proměnné, neposíláme jako přílohu)
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.pdf', compact('invoice', 'qrCode'));
+
+    try {
+        // 👉 vytvoř dočasný podepsaný link platný 7 dní
+        $downloadUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'invoices.download',
+            now()->addDays(7),
+            ['id' => $invoice->id]
         );
 
-        // Generuj PDF (zatím jen do proměnné, neposíláme jako přílohu)
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.pdf', compact('invoice', 'qrCode'));
+        // Odešli e-mail s odkazem na stažení
+        \Illuminate\Support\Facades\Mail::send('emails.invoice', [
+            'invoice'     => $invoice,
+            'downloadUrl' => $downloadUrl,
+        ], function ($message) use ($invoice) {
+            $message->to($invoice->order->email)
+                ->subject("Faktura {$invoice->invoice_number}");
+        });
 
-        try {
-            // Odešli e-mail (bez přílohy, jen odkaz ke stažení)
-            \Illuminate\Support\Facades\Mail::send('emails.invoice', [
-                'invoice'     => $invoice,
-                'downloadUrl' => route('invoices.download', $invoice)
-            ], function ($message) use ($invoice) {
-                $message->to($invoice->order->email)
-                    ->subject("Faktura {$invoice->invoice_number}");
-            });
+        // ✅ po úspěšném odeslání změnit status
+        $invoice->status = 'sent';
+        $invoice->save();
 
-            // ✅ po úspěšném odeslání změnit status
-            $invoice->status = 'sent';
-            $invoice->save();
-
-            return back()->with('success', "✅ Faktura {$invoice->invoice_number} byla úspěšně odeslána.");
-        } catch (\Exception $e) {
-            return back()->with('error', "❌ Odeslání selhalo: " . $e->getMessage());
-        }
+        return back()->with('success', "✅ Faktura {$invoice->invoice_number} byla úspěšně odeslána.");
+    } catch (\Exception $e) {
+        return back()->with('error', "❌ Odeslání selhalo: " . $e->getMessage());
     }
+}
+
 
 
 
