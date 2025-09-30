@@ -8,6 +8,7 @@ use App\Http\Controllers\BankPaymentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\LabelController;
 use App\Http\Controllers\DashboardController;
+use App\Models\Order;
 
 use Illuminate\Support\Facades\URL;
 
@@ -25,7 +26,7 @@ Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'
 
 
 // 🏠 Domovská stránka = veřejný formulář
-Route::get('/', fn () => view('order-form'))->name('form');
+Route::get('/', fn() => view('order-form'))->name('form');
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 
 // // 📑 Faktury – veřejné stažení
@@ -33,29 +34,33 @@ Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 //     ->name('invoices.download');
 
 // … nahoře
-Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+// Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 
 // ✅ Kontrola prostředí (nechceš-li veřejné, dej to pod auth)
-Route::get('/check-ini', function () {
-    return [
-        'loaded'      => php_ini_loaded_file(),
-        'additional'  => php_ini_scanned_files(),
-        'soap'        => class_exists(\SoapClient::class),
-        'php_version' => PHP_VERSION,
-        'sapi'        => php_sapi_name(),
-    ];
-});
+// Route::get('/check-ini', function () {
+//     return [
+//         'loaded'      => php_ini_loaded_file(),
+//         'additional'  => php_ini_scanned_files(),
+//         'soap'        => class_exists(\SoapClient::class),
+//         'php_version' => PHP_VERSION,
+//         'sapi'        => php_sapi_name(),
+//     ];
+// });
 
 // 📊 Admin dashboard – chráněný přístup
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
-
+    // Route::get('/test-balikovna/{id}', function ($id) {
+    //     $order = Order::findOrFail($id);
+    //     return app(LabelController::class)->balikovna($order);
+    // });
     // 📦 Label routes
-    Route::get('/labels/wait_label', fn () => view('labels.wait_label'))->name('labels.wait_label');
+    Route::get('/labels/wait_label', fn() => view('labels.wait_label'))->name('labels.wait_label');
     Route::get('/labels/pplparcel/{order}', [LabelController::class, 'pplParcelshop'])->name('labels.pplparcel');
     Route::get('/labels/ppl/{order}', [LabelController::class, 'ppl'])->name('labels.ppl');
     Route::get('/labels/zasilkovna/{order}', [LabelController::class, 'zasilkovna'])->name('labels.zasilkovna');
+    Route::get('/labels/balikovna/{order}', [LabelController::class, 'balikovna'])->name('labels.balikovna');
 
     // 💳 Bankovní platby
     Route::post('/bank-payments/check', [BankPaymentController::class, 'check'])->name('bank-payments.check');
@@ -78,7 +83,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // ℹ️ phpinfo (jen pro admina, pokud nechceš veřejně)
-Route::middleware(['auth'])->get('/phpinfo', fn () => phpinfo());
-    // 👤 Získání detailu objednávky (JSON pro faktury)
+Route::middleware(['auth'])->get('/phpinfo', fn() => phpinfo());
+// 👤 Získání detailu objednávky (JSON pro faktury)
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

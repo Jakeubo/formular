@@ -86,61 +86,63 @@ public function show(Order $order)
         $labelLink = "[Vytisknout štítek](https://zapichnito3d.cz/print/wait_label.html?token={$order->id})";
 
         // 📢 Zpráva pro Discord
-        switch (strtolower($order->carrier)) {
-            case "osobni":
-                $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
-                    . "**Mail:** {$order->email}\n"
-                    . "**Telefon:** {$order->phone}\n"
-                    . "**Osobní vyzvednutí:** Sushi hub\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'osobni']) . ")\n\n"
-                    . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
-                break;
+        // 📢 Zpráva pro Discord
+switch (strtolower($order->carrier)) {
+    case "osobni":
+        $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
+            . "**Mail:** {$order->email}\n"
+            . "**Telefon:** {$order->phone}\n"
+            . "**Osobní vyzvednutí:** Sushi hub\n\n"
+            . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'osobni']) . ")\n\n"
+            . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
+        break;
 
-            case "zasilkovna":
-                $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
-                    . "**Mail:** {$order->email}\n"
-                    . "**Telefon:** {$order->phone}\n"
-                    . "**Výdejní místo (Zásilkovna):** {$order->carrier_id}, {$order->carrier_address}\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'zasilkovna']) . ")\n\n"
-                    . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
-                break;
+    case "zasilkovna":
+        $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
+            . "**Mail:** {$order->email}\n"
+            . "**Telefon:** {$order->phone}\n"
+            . "**Výdejní místo (Zásilkovna):** {$order->carrier_id}, {$order->carrier_address}\n\n"
+            . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'zasilkovna']) . ")\n\n"
+            . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
+        break;
 
-            case "balikovna":
-                $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
-                    . "**Mail:** {$order->email}\n"
-                    . "**Telefon:** {$order->phone}\n"
-                    . "**Výdejní místo (Balíkovna):** {$order->carrier_id}, {$order->carrier_address}\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'balikovna']) . ")\n\n"
-                    . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
-                break;
+case "balikovna":
+    $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
+        . "**Mail:** {$order->email}\n"
+        . "**Telefon:** {$order->phone}\n"
+        . "**Výdejní místo (Balíkovna):** {$order->carrier_id}, {$order->carrier_address}\n\n"
+        . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'balikovna']) . ")\n\n"
+        . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
+    break;
 
-            case "ppl":
-                $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
-                    . "**Mail:** {$order->email}\n"
-                    . "**Telefon:** {$order->phone}\n"
-                    . "**Adresa:** {$order->address}, {$order->city}, {$order->zip}\n"
-                    . "**Dopravce:** PPL Home\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'pplhome']) . ")\n\n"
-                    . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
-                break;
+    case "ppl":
+        $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
+            . "**Mail:** {$order->email}\n"
+            . "**Telefon:** {$order->phone}\n"
+            . "**Adresa:** {$order->address}, {$order->city}, {$order->zip}\n"
+            . "**Dopravce:** PPL Home\n\n"
+            . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'pplhome']) . ")\n\n"
+            . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
+        break;
 
-            case "pplparcelshop":
-                $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
-                    . "**Mail:** {$order->email}\n"
-                    . "**Telefon:** {$order->phone}\n"
-                    . "**Výdejní místo (PPL ParcelShop):** {$order->carrier_id}, {$order->carrier_address}\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'pplparcel']) . ")\n\n"
-                    . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
-                break;
+    case "pplparcelshop":
+        $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
+            . "**Mail:** {$order->email}\n"
+            . "**Telefon:** {$order->phone}\n"
+            . "**Výdejní místo (PPL ParcelShop):** {$order->carrier_id}, {$order->carrier_address}\n\n"
+            . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'pplparcel']) . ")\n\n"
+            . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
+        break;
 
-            default:
-                $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
-                    . "**Mail:** {$order->email}\n"
-                    . "**Telefon:** {$order->phone}\n"
-                    . "**Dopravce:** {$order->carrier}\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'other']) . ")\n\n"
-                    . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
-        }
+    default:
+        $content = "{$order->id}. {$order->first_name} {$order->last_name}\n\n"
+            . "**Mail:** {$order->email}\n"
+            . "**Telefon:** {$order->phone}\n"
+            . "**Dopravce:** {$order->carrier}\n\n"
+            . "[Vytisknout štítek](" . route('labels.wait_label', ['order' => $order->id, 'carrier' => 'other']) . ")\n\n"
+            . "Pro Zápicháře: <@1239282326601732238> a <@280429913130139648>\n";
+}
+
 
 
 

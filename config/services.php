@@ -41,10 +41,16 @@ return [
     ],
 
     'zasilkovna' => [
-    'api_key' => env('ZASILKOVNA_API_KEY'),
-    'wsdl' => env('ZASILKOVNA_WSDL'),
-    'wsdl_bugfix' => env('ZASILKOVNA_WSDL_BUGFIX'),
-],
+        'api_key' => env('ZASILKOVNA_API_KEY'),
+        'wsdl' => env('ZASILKOVNA_WSDL'),
+        'wsdl_bugfix' => env('ZASILKOVNA_WSDL_BUGFIX'),
+    ],
 
+    'balikovna' => [
+    'api_token'       => env('BALIKOVNA_API_TOKEN'),
+    'secret_key'      => env('BALIKOVNA_SECRET_KEY'),
+    'customer_id'     => env('BALIKOVNA_CUSTOMER_ID'),
+    'contract_number' => env('BALIKOVNA_CONTRACT_NUMBER'),
+],
 
 ];

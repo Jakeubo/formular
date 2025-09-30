@@ -14,11 +14,9 @@
 </head>
 </head>
 
-<body class="bg-pink bg-no-repeat bg-cover bg-center 
-             min-h-screen p-2 sm:p-6 
-             flex justify-center 
-             items-start sm:items-start">
-
+<body class="bg-gradient-to-br from-[#E5B4D3] via-pink-200 to-[#BAEEE8] 
+             bg-no-repeat bg-cover bg-center 
+             min-h-screen p-2 sm:p-6 flex justify-center items-start">
 
     <form id="main_form" method="POST" action="{{ route('order.store') }}"
         class="w-full sm:max-w-xl md:max-w-xl 
