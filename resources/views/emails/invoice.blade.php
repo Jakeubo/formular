@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="cs">
+
 <head>
     <meta charset="UTF-8">
     <title>Faktura č. {{ $invoice->invoice_number }}</title>
 </head>
+
 <body style="font-family: Arial, sans-serif; background: #f9fafb; margin:0; padding:0;">
     <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin:auto;">
         <!-- Hlavička -->
@@ -34,9 +36,9 @@
                 </p>
 
                 <p style="text-align:center;">
-                    <a href="{{ route('invoices.download', $invoice) }}" 
-                       style="background:#4f46e5; color:#fff; text-decoration:none; padding:12px 24px; 
-                              border-radius:8px; font-weight:bold; font-size:16px;">
+                    <a href="{{ $downloadUrl }}"
+                        style="background:#4f46e5; color:#fff; text-decoration:none; padding:12px 24px; 
+          border-radius:8px; font-weight:bold; font-size:16px;">
                         📎 Stáhnout fakturu
                     </a>
                 </p>
@@ -57,4 +59,5 @@
         </tr>
     </table>
 </body>
+
 </html>

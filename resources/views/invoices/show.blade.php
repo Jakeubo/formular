@@ -11,19 +11,19 @@
         </div>
 
         @if(session('success'))
-    <div id="flash-message" class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
-        <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg shadow-md">
-            {{ session('success') }}
+        <div id="flash-message" class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
+            <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg shadow-md">
+                {{ session('success') }}
+            </div>
         </div>
-    </div>
 
-    <script>
-        setTimeout(() => {
-            const el = document.getElementById('flash-message');
-            if (el) el.style.display = 'none';
-        }, 4000);
-    </script>
-@endif
+        <script>
+            setTimeout(() => {
+                const el = document.getElementById('flash-message');
+                if (el) el.style.display = 'none';
+            }, 4000);
+        </script>
+        @endif
 
     </x-slot>
 
@@ -160,6 +160,7 @@
                         📧 Odeslat fakturu
                     </button>
                 </form>
+
 
 
                 <a href="{{ route('invoices.download', $invoice) }}"

@@ -11,9 +11,17 @@ use App\Http\Controllers\DashboardController;
 
 use Illuminate\Support\Facades\URL;
 
+Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])
+    ->name('invoices.send');
+
+
 Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])
     ->name('invoices.download')
     ->middleware('signed');
+
+// Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])
+//     ->name('invoices.download')
+//     ->middleware('signed');
 
 
 // 🏠 Domovská stránka = veřejný formulář
@@ -54,7 +62,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/bank-payments', [BankPaymentController::class, 'index'])->name('bank-payments.index');
 
     // 📑 Faktury
-    Route::get('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
+    // Route::get('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
     // Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
     Route::post('/invoices/{invoice}/paid', [InvoiceController::class, 'markAsPaid'])->name('invoices.paid');
     Route::resource('invoices', InvoiceController::class);

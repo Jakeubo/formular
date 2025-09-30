@@ -11,21 +11,21 @@
         </div>
 
         @if(session('success'))
-    <div id="flash-message" class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
-        <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg shadow-md">
-            {{ session('success') }}
+        <div id="flash-message" class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
+            <div class="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg shadow-md">
+                {{ session('success') }}
+            </div>
         </div>
-    </div>
 
-    <script>
-        setTimeout(() => {
-            const el = document.getElementById('flash-message');
-            if (el) el.style.display = 'none';
-        }, 8000);
-    </script>
-@endif
+        <script>
+            setTimeout(() => {
+                const el = document.getElementById('flash-message');
+                if (el) el.style.display = 'none';
+            }, 8000);
+        </script>
+        @endif
 
-        
+
     </x-slot>
 
     <div class="py-10 bg-gray-50">
@@ -137,8 +137,14 @@
                                         <!-- Dropdown -->
                                         <div id="dropdown-{{ $invoice->id }}"
                                             class="hidden absolute right-0 mt-2 w-44 bg-white border rounded-xl shadow-lg z-10 overflow-hidden">
-                                            <a href="{{ route('invoices.send', $invoice) }}"
-                                                class="block px-4 py-2 text-sm hover:bg-gray-50">✉️ Odeslat fakturu</a>
+                                            <form action="{{ route('invoices.send', $invoice) }}" method="POST">
+                                                @csrf
+                                                <button type="submit"
+                                                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">
+                                                    ✉️ Odeslat fakturu
+                                                </button>
+                                            </form>
+
                                             <a href="{{ route('invoices.download', $invoice) }}"
                                                 class="block px-4 py-2 text-sm hover:bg-gray-50">⬇️ Stáhnout fakturu</a>
                                         </div>

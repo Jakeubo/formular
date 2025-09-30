@@ -10,25 +10,26 @@ use Illuminate\Support\Facades\Mail;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\URL;
 
 
 class InvoiceController extends Controller
 {
 
 
+    
+
 public function send(Invoice $invoice)
 {
     $invoice->load('items', 'order');
 
-    // Připrav QR kód
+    // QR kód …
     $iban = 'CZ2408000000004396484053';
     $amount = number_format($invoice->total_price, 2, '.', '');
     $vs = $invoice->variable_symbol;
     $msg = iconv('UTF-8', 'ASCII//TRANSLIT', 'Faktura ' . $invoice->invoice_number);
 
     $qrString = "SPD*1.0*ACC:$iban*AM:$amount*CC:CZK*X-VS:$vs*MSG:$msg";
-
     $qrCode = base64_encode(
         \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
             ->size(300)
@@ -36,71 +37,49 @@ public function send(Invoice $invoice)
             ->generate($qrString)
     );
 
-    // Generuj PDF (zatím jen do proměnné, neposíláme jako přílohu)
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.pdf', compact('invoice', 'qrCode'));
+    // 🔑 správně podepsaný odkaz (parametr "invoice")
+    $downloadUrl = URL::temporarySignedRoute(
+        'invoices.download',
+        now()->addDays(7),
+        ['invoice' => $invoice->id]   // název parametru MUSÍ být {invoice}
+    );
 
-    try {
-        // 👉 vytvoř dočasný podepsaný link platný 7 dní
-        $downloadUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
-            'invoices.download',
-            now()->addDays(7),
-            ['id' => $invoice->id]
-        );
+    // poslat e-mail
+    \Illuminate\Support\Facades\Mail::send('emails.invoice', [
+        'invoice'     => $invoice,
+        'downloadUrl' => $downloadUrl
+    ], function ($message) use ($invoice) {
+        $message->to($invoice->order->email)
+            ->subject("Faktura {$invoice->invoice_number}");
+    });
 
-        // Odešli e-mail s odkazem na stažení
-        \Illuminate\Support\Facades\Mail::send('emails.invoice', [
-            'invoice'     => $invoice,
-            'downloadUrl' => $downloadUrl,
-        ], function ($message) use ($invoice) {
-            $message->to($invoice->order->email)
-                ->subject("Faktura {$invoice->invoice_number}");
-        });
+    $invoice->update(['status' => 'sent']);
 
-        // ✅ po úspěšném odeslání změnit status
-        $invoice->status = 'sent';
-        $invoice->save();
-
-        return back()->with('success', "✅ Faktura {$invoice->invoice_number} byla úspěšně odeslána.");
-    } catch (\Exception $e) {
-        return back()->with('error', "❌ Odeslání selhalo: " . $e->getMessage());
-    }
+    return back()->with('success', "✅ Faktura {$invoice->invoice_number} byla úspěšně odeslána.");
 }
 
 
 
 
-    public function download($id)
-    {
-        $invoice = Invoice::with('items', 'order')->findOrFail($id);
+public function download(Invoice $invoice)
+{
+    $invoice->load('items', 'order');
 
-        // Tvůj reálný účet v IBAN formátu
-        $iban = 'CZ2408000000004396484053';
+    $iban = 'CZ2408000000004396484053';
+    $amount = number_format($invoice->total_price, 2, '.', '');
+    $vs = substr(preg_replace('/\D/', '', (string) $invoice->variable_symbol), 0, 10);
+    $msg = iconv('UTF-8', 'ASCII//TRANSLIT', "Zapichnito3d ");
+    $qrString = "SPD*1.0*ACC:$iban*AM:$amount*CC:CZK*X-VS:$vs*MSG:$msg";
 
-        // Částka
-        $amount = number_format($invoice->total_price, 2, '.', '');
+    $qrCode = base64_encode(
+        \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+            ->size(300)->errorCorrection('M')->generate($qrString)
+    );
 
-        // Variabilní symbol – jen čísla a max. 10 znaků
-        $vs = preg_replace('/\D/', '', (string) $invoice->variable_symbol);
-        $vs = substr($vs, 0, 10);
+    return \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.pdf', compact('invoice','qrCode'))
+        ->download("faktura_{$invoice->invoice_number}.pdf");
+}
 
-        // zpráva
-        $msg = iconv('UTF-8', 'ASCII//TRANSLIT', "Zapichnito3d ");
-
-        // QR řetězec
-        $qrString = "SPD*1.0*ACC:$iban*AM:$amount*CC:CZK*X-VS:$vs*MSG:$msg";
-
-
-        Log::info('QR STRING: ' . $qrString);
-
-        // QR kód
-        $qrCode = base64_encode(
-            QrCode::format('svg')->size(300)->errorCorrection('M')->generate($qrString)
-        );
-
-        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'qrCode'));
-
-        return $pdf->download("faktura_{$invoice->invoice_number}.pdf");
-    }
 
 
     public function index(\Illuminate\Http\Request $request)
