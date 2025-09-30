@@ -14,7 +14,7 @@
 </head>
 </head>
 
-<body class="bg-[url(http://localhost:8000/images/zap.webp)] bg-no-repeat bg-cover bg-center 
+<body class="bg-pink bg-no-repeat bg-cover bg-center 
              min-h-screen p-2 sm:p-6 
              flex justify-center 
              items-start sm:items-start">

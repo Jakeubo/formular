@@ -8,10 +8,23 @@ use Illuminate\Support\Facades\Http;
 
 class OrderController extends Controller
 {
-    public function show(\App\Models\Order $order)
-    {
-        return response()->json($order);
-    }
+public function show(Order $order)
+{
+    return response()->json([
+        'id'             => $order->id,
+        'first_name'     => $order->first_name,
+        'last_name'      => $order->last_name,
+        'email'          => $order->email,
+        'phone'          => $order->phone,
+        'carrier'        => $order->carrier,
+        'carrier_id'     => $order->carrier_id,
+        'carrier_address'=> $order->carrier_address,
+        'address'        => $order->address,
+        'city'           => $order->city,
+        'zip'            => $order->zip,
+    ]);
+}
+
 
 
     public function store(Request $request)

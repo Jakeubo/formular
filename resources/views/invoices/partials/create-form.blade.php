@@ -143,39 +143,36 @@
 
 <!-- JS pro načtení detailu objednávky -->
 <script>
-    // Když se změní zákazník v selectu
-    document.getElementById("orderSelect").addEventListener("change", function() {
-        let orderId = this.value;
-        if (!orderId) {
-            document.getElementById("carrier").value = "";
-            document.getElementById("carrier_address").value = "";
-            return;
-        }
+document.getElementById("orderSelect").addEventListener("change", function() {
+    let orderId = this.value;
+    if (!orderId) {
+        document.getElementById("carrier").value = "";
+        document.getElementById("carrier_address").value = "";
+        return;
+    }
 
-        fetch(`/orders/${orderId}`)
-            .then(res => res.json())
-            .then(order => {
-                // ❌ Už NEVYPISUJEME kontakty
+    fetch(`/orders/${orderId}`)
+        .then(res => res.json())
+        .then(order => {
+            // 👉 sem to patří
+            document.getElementById("carrier").value = order.carrier ?? '';
+            document.getElementById("carrier_address").value = order.carrier_address ?? '';
 
-                // Dopravce
-                document.getElementById("carrier").value = order.carrier ?? '';
-                document.getElementById("carrier_address").value = order.carrier_address ?? '';
+            // další logika (např. položky)
+            let tbody = document.querySelector("#itemsTable tbody");
+            tbody.innerHTML = "";
 
-                // Položky
-                let tbody = document.querySelector("#itemsTable tbody");
-                tbody.innerHTML = "";
-
-                if (order.carrier) {
-                    // doprava + prázdný řádek
-                    addRow(1, order.carrier, 0);
-                    addRow();
-                } else {
-                    addRow();
-                }
-            })
-            .catch(err => console.error("Chyba při načítání objednávky:", err));
-    });
+            if (order.carrier) {
+                addRow(1, order.carrier, 0);
+                addRow();
+            } else {
+                addRow();
+            }
+        })
+        .catch(err => console.error("Chyba při načítání objednávky:", err));
+});
 </script>
+
 
 
 <!-- JS pro načtení detailu -->

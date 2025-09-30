@@ -4,7 +4,11 @@ export default {
     "./resources/js/**/*.js",
   ],
   theme: {
-    extend: {},
+    extend: {
+      backgroundImage: {
+        'zap': 'url("/images/zap.webp")',
+      },
+    },
   },
   plugins: [],
 }

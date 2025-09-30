@@ -13,6 +13,10 @@ use App\Http\Controllers\DashboardController;
 Route::get('/', fn () => view('order-form'))->name('form');
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 
+
+// … nahoře
+Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
 // ✅ Kontrola prostředí (nechceš-li veřejné, dej to pod auth)
 Route::get('/check-ini', function () {
     return [
@@ -27,6 +31,7 @@ Route::get('/check-ini', function () {
 // 📊 Admin dashboard – chráněný přístup
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+
 
     // 📦 Label routes
     Route::get('/labels/wait_label', fn () => view('labels.wait_label'))->name('labels.wait_label');
@@ -56,5 +61,6 @@ Route::middleware(['auth'])->group(function () {
 
 // ℹ️ phpinfo (jen pro admina, pokud nechceš veřejně)
 Route::middleware(['auth'])->get('/phpinfo', fn () => phpinfo());
+    // 👤 Získání detailu objednávky (JSON pro faktury)
 
 require __DIR__.'/auth.php';

@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 
-
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -14,3 +13,9 @@
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+body {
+  background-image: url("../images/zap.webp");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
