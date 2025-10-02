@@ -120,16 +120,15 @@
         <div>
             <label for="listboxDopravce" class="block text-sm sm:text-base font-medium text-gray-700 mb-1">Dopravce</label>
             <select name="carrier" id="listboxDopravce" required
-                class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-[#E5B4D3] rounded-xl shadow-sm 
-                           bg-gradient-to-r from-pink-50 to-purple-50 hover:from-pink-100 hover:to-purple-100 
-                           focus:border-pink-400 focus:ring-2 focus:ring-pink-200 transition text-sm sm:text-base">
+                class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-[#E5B4D3] rounded-xl">
                 <option value="">--Vyberte dopravce--</option>
-                <option value="Balikovna">Balíkovna</option>
-                <option value="Zasilkovna">Zásilkovna</option>
-                <option value="Ppl">PPL domů</option>
-                <option value="PplParcelshop">PPL výdejna</option>
-                <option value="osobni">Osobní odběr</option>
+                @foreach($shippingMethods as $method)
+                <option value="{{ $method->code }}">
+                    {{ $method->name }} – {{ number_format($method->price, 0, ',', ' ') }} Kč
+                </option>
+                @endforeach
             </select>
+
         </div>
 
         <!-- Výběr výdejního místa -->
@@ -164,7 +163,7 @@
             ✨ Odeslat objednávku ✨
         </button>
     </form>
-
+    
     <!-- Modal pro PPL výdejnu -->
 
     <div id="pplModal"

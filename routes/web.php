@@ -9,8 +9,14 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\LabelController;
 use App\Http\Controllers\DashboardController;
 use App\Models\Order;
-
+use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\URL;
+use App\Models\ShippingMethod;
+
+Route::get('/', function () {
+    $shippingMethods = ShippingMethod::all();
+    return view('order-form', compact('shippingMethods'));
+})->name('form');
 
 Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])
     ->name('invoices.send');
@@ -26,7 +32,7 @@ Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'
 
 
 // 🏠 Domovská stránka = veřejný formulář
-Route::get('/', fn() => view('order-form'))->name('form');
+// Route::get('/', fn() => view('order-form'))->name('form');
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 
 // // 📑 Faktury – veřejné stažení
@@ -34,7 +40,7 @@ Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 //     ->name('invoices.download');
 
 // … nahoře
-// Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 
 // ✅ Kontrola prostředí (nechceš-li veřejné, dej to pod auth)
 // Route::get('/check-ini', function () {
@@ -50,13 +56,14 @@ Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 // 📊 Admin dashboard – chráněný přístup
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
-
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('/settings/shipping', [SettingController::class, 'updateShipping'])->name('settings.shipping.update');
     // Route::get('/test-balikovna/{id}', function ($id) {
     //     $order = Order::findOrFail($id);
     //     return app(LabelController::class)->balikovna($order);
     // });
     // 📦 Label routes
-    Route::get('/labels/wait_label', fn() => view('labels.wait_label'))->name('labels.wait_label');
+    Route::get('/labels/wait_label', [LabelController::class, 'waitLabel'])->name('labels.wait_label');
     Route::get('/labels/pplparcel/{order}', [LabelController::class, 'pplParcelshop'])->name('labels.pplparcel');
     Route::get('/labels/ppl/{order}', [LabelController::class, 'ppl'])->name('labels.ppl');
     Route::get('/labels/zasilkovna/{order}', [LabelController::class, 'zasilkovna'])->name('labels.zasilkovna');

@@ -10,18 +10,20 @@ class Kernel extends ConsoleKernel
     /**
      * Definuj příkazy plánovače.
      */
-    protected function schedule(Schedule $schedule): void
+    protected function schedule(Schedule $schedule)
     {
-        // náš příkaz pro kontrolu plateb
-        $schedule->command('bank:check-payments')->everyFiveMinutes();
-    }
+        // 🔁 spustí každých 10 minut
+        $schedule->command('bank:check-payments')->everyTenMinutes();
 
+        // případně test jen na log
+        // $schedule->command('inspire')->everyMinute();
+    }
     /**
      * Zaregistruj příkazy aplikace.
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

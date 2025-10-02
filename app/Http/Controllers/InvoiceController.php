@@ -17,91 +17,92 @@ class InvoiceController extends Controller
 {
 
 
-    
-
-public function send(Invoice $invoice)
-{
-    $invoice->load('items', 'order');
-
-    // QR kód …
-    $iban = 'CZ2408000000004396484053';
-    $amount = number_format($invoice->total_price, 2, '.', '');
-    $vs = $invoice->variable_symbol;
-    $msg = iconv('UTF-8', 'ASCII//TRANSLIT', 'Faktura ' . $invoice->invoice_number);
-
-    $qrString = "SPD*1.0*ACC:$iban*AM:$amount*CC:CZK*X-VS:$vs*MSG:$msg";
-    $qrCode = base64_encode(
-        \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
-            ->size(300)
-            ->errorCorrection('M')
-            ->generate($qrString)
-    );
-
-    // 🔑 správně podepsaný odkaz (parametr "invoice")
-    $downloadUrl = URL::temporarySignedRoute(
-        'invoices.download',
-        now()->addDays(7),
-        ['invoice' => $invoice->id]   // název parametru MUSÍ být {invoice}
-    );
-
-    // poslat e-mail
-    \Illuminate\Support\Facades\Mail::send('emails.invoice', [
-        'invoice'     => $invoice,
-        'downloadUrl' => $downloadUrl
-    ], function ($message) use ($invoice) {
-        $message->to($invoice->order->email)
-            ->subject("Faktura {$invoice->invoice_number}");
-    });
-
-    $invoice->update(['status' => 'sent']);
-
-    return back()->with('success', "✅ Faktura {$invoice->invoice_number} byla úspěšně odeslána.");
-}
 
 
-
-
-public function download(Invoice $invoice)
-{
-    $invoice->load('items', 'order');
-
-    $iban = 'CZ2408000000004396484053';
-    $amount = number_format($invoice->total_price, 2, '.', '');
-    $vs = substr(preg_replace('/\D/', '', (string) $invoice->variable_symbol), 0, 10);
-    $msg = iconv('UTF-8', 'ASCII//TRANSLIT', "Zapichnito3d ");
-    $qrString = "SPD*1.0*ACC:$iban*AM:$amount*CC:CZK*X-VS:$vs*MSG:$msg";
-
-    $qrCode = base64_encode(
-        \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
-            ->size(300)->errorCorrection('M')->generate($qrString)
-    );
-
-    return \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.pdf', compact('invoice','qrCode'))
-        ->download("faktura_{$invoice->invoice_number}.pdf");
-}
-
-
-
-    public function index(\Illuminate\Http\Request $request)
+    public function send(Invoice $invoice)
     {
-        $query = Invoice::with('order')->orderBy('created_at', 'desc');
+        $invoice->load('items', 'order');
 
-        // vyhledávání podle zákazníka nebo emailu
-        if ($search = $request->input('search')) {
-            $query->whereHas('order', function ($q) use ($search) {
-                $q->where('first_name', 'like', "%$search%")
-                    ->orWhere('last_name', 'like', "%$search%")
-                    ->orWhere('email', 'like', "%$search%");
-            });
-        }
+        // QR kód …
+        $iban = 'CZ2408000000004396484053';
+        $amount = number_format($invoice->total_price, 2, '.', '');
+        $vs = $invoice->variable_symbol;
+        $msg = iconv('UTF-8', 'ASCII//TRANSLIT', 'Faktura ' . $invoice->invoice_number);
 
-        $invoices = $query->paginate(10);
+        $qrString = "SPD*1.0*ACC:$iban*AM:$amount*CC:CZK*X-VS:$vs*MSG:$msg";
+        $qrCode = base64_encode(
+            \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+                ->size(300)
+                ->errorCorrection('M')
+                ->generate($qrString)
+        );
 
-        // seznam objednávek pro select v modalu
-        $orders = \App\Models\Order::orderBy('created_at', 'desc')->get();
+        // 🔑 správně podepsaný odkaz (parametr "invoice")
+        $downloadUrl = URL::temporarySignedRoute(
+            'invoices.download',
+            now()->addDays(7),
+            ['invoice' => $invoice->id]   // název parametru MUSÍ být {invoice}
+        );
 
-        return view('invoices.index', compact('invoices', 'orders'));
+        // poslat e-mail
+        \Illuminate\Support\Facades\Mail::send('emails.invoice', [
+            'invoice'     => $invoice,
+            'downloadUrl' => $downloadUrl
+        ], function ($message) use ($invoice) {
+            $message->to($invoice->order->email)
+                ->subject("Faktura {$invoice->invoice_number}");
+        });
+
+        $invoice->update(['status' => 'sent']);
+
+        return back()->with('success', "✅ Faktura {$invoice->invoice_number} byla úspěšně odeslána.");
     }
+
+
+
+
+    public function download(Invoice $invoice)
+    {
+        $invoice->load('items', 'order');
+
+        $iban = 'CZ2408000000004396484053';
+        $amount = number_format($invoice->total_price, 2, '.', '');
+        $vs = substr(preg_replace('/\D/', '', (string) $invoice->variable_symbol), 0, 10);
+        $msg = iconv('UTF-8', 'ASCII//TRANSLIT', "Zapichnito3d ");
+        $qrString = "SPD*1.0*ACC:$iban*AM:$amount*CC:CZK*X-VS:$vs*MSG:$msg";
+
+        $qrCode = base64_encode(
+            \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+                ->size(300)->errorCorrection('M')->generate($qrString)
+        );
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.pdf', compact('invoice', 'qrCode'))
+            ->download("faktura_{$invoice->invoice_number}.pdf");
+    }
+
+
+
+ public function index(Request $request)
+{
+    $query = Invoice::with('order')->orderBy('created_at', 'desc');
+
+    if ($search = $request->input('search')) {
+        $query->whereHas('order', function ($q) use ($search) {
+            $q->where('first_name', 'like', "%$search%")
+                ->orWhere('last_name', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%");
+        });
+    }
+
+    $invoices = $query->paginate(10);
+    $orders = Order::orderBy('created_at', 'desc')->get();
+
+    // 🔥 doplníme
+    $shippingMethods = \App\Models\ShippingMethod::all()->keyBy('code');
+
+    return view('invoices.index', compact('invoices', 'orders', 'shippingMethods'));
+}
+
 
 
     public function markAsPaid(Invoice $invoice)
@@ -118,8 +119,10 @@ public function download(Invoice $invoice)
 
     public function create()
     {
-        $orders = Order::all();
-        return view('invoices.create', compact('orders'));
+        $orders = \App\Models\Order::all();
+        $shippingMethods = \App\Models\ShippingMethod::all()->keyBy('code');
+
+        return view('invoices.create', compact('orders', 'shippingMethods'));
     }
 
     public function store(Request $request)

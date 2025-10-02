@@ -140,37 +140,42 @@
         💾 Uložit fakturu
     </button>
 </form>
+<div id="shipping-data" data-methods='@json($shippingMethods)'></div>
+
 
 <!-- JS pro načtení detailu objednávky -->
+
+
 <script>
-document.getElementById("orderSelect").addEventListener("change", function() {
-    let orderId = this.value;
-    if (!orderId) {
-        document.getElementById("carrier").value = "";
-        document.getElementById("carrier_address").value = "";
-        return;
-    }
+    const shippingData = document.getElementById("shipping-data").dataset.methods;
+    const shippingMethods = JSON.parse(shippingData);
 
-    fetch(`/orders/${orderId}`)
-        .then(res => res.json())
-        .then(order => {
-            // 👉 sem to patří
-            document.getElementById("carrier").value = order.carrier ?? '';
-            document.getElementById("carrier_address").value = order.carrier_address ?? '';
+    document.getElementById("orderSelect").addEventListener("change", function() {
+        let orderId = this.value;
+        if (!orderId) return;
 
-            // další logika (např. položky)
-            let tbody = document.querySelector("#itemsTable tbody");
-            tbody.innerHTML = "";
+        fetch(`/orders/${orderId}`)
+            .then(res => res.json())
+            .then(order => {
+                document.getElementById("carrier").value = order.carrier ?? '';
+                document.getElementById("carrier_address").value = order.carrier_address ?? '';
 
-            if (order.carrier) {
-                addRow(1, order.carrier, 0);
+                let tbody = document.querySelector("#itemsTable tbody");
+                tbody.innerHTML = "";
+
+                if (order.carrier) {
+                    let carrierCode = order.carrier; // použij přímo kód z DB
+                    let method = shippingMethods[carrierCode];
+
+                    if (method) {
+                        addRow(1, method.name, method.price); // vypíše "Balíkovna" a nastaví cenu
+                    } else {
+                        addRow(1, order.carrier, 0); // fallback – když není nalezen
+                    }
+                }
                 addRow();
-            } else {
-                addRow();
-            }
-        })
-        .catch(err => console.error("Chyba při načítání objednávky:", err));
-});
+            });
+    });
 </script>
 
 
@@ -188,46 +193,37 @@ document.getElementById("orderSelect").addEventListener("change", function() {
     }
 
     function addRow(qty = 1, description = "", price = 0) {
-        let tbody = document.querySelector("#itemsTable tbody");
-        let index = tbody.querySelectorAll("tr").length;
-        let newRow = document.createElement("tr");
-        newRow.innerHTML = `
-            <td class="border p-1 text-center w-20">
-                <input type="number" name="items[${index}][quantity]" value="${qty}" min="1"
-                       class="border rounded p-1 w-full quantity text-center" required>
-            </td>
-            <td class="border p-1">
-                <input type="text" name="items[${index}][description]" value="${description}"
-                       class="border rounded p-1 w-full" required>
-            </td>
-            <td class="border p-1 text-center w-32">
-                <input type="number" step="0.01" name="items[${index}][unit_price]" value="${price}"
-                       class="border rounded p-1 w-full unit_price text-center" required>
-            </td>
-            <td class="border p-1 text-center w-12">
-                <button type="button" onclick="removeRow(this)" class="text-red-500">✕</button>
-            </td>
-        `;
-        tbody.appendChild(newRow);
-        attachEvents(newRow);
-        updateTotals();
-    }
+    let tbody = document.querySelector("#itemsTable tbody");
+    let index = tbody.querySelectorAll("tr").length;
+    let newRow = document.createElement("tr");
+    newRow.innerHTML = `
+        <td class="border p-1 text-center w-20">
+            <input type="number" name="items[${index}][quantity]" value="${qty}" min="1"
+                   class="border rounded p-1 w-full quantity text-center" required>
+        </td>
+        <td class="border p-1">
+            <input type="text" name="items[${index}][description]" value="${description}"
+                   class="border rounded p-1 w-full" required>
+        </td>
+        <td class="border p-1 text-center w-32">
+            <input type="number" step="0.01" name="items[${index}][unit_price]" value="${price}"
+                   class="border rounded p-1 w-full unit_price text-center" required>
+        </td>
+        <td class="border p-1 text-center w-12">
+            <button type="button" onclick="removeRow(this)" class="text-red-500">✕</button>
+        </td>
+    `;
+    tbody.appendChild(newRow);
+    attachEvents(newRow);
+    reindexRows();  // ✅ přepočítáme indexy
+    updateTotals();
+}
 
-    function removeRow(btn) {
-        btn.closest("tr").remove();
-        updateTotals();
-    }
-
-    function attachEvents(row) {
-        row.querySelectorAll(".quantity, .unit_price").forEach(input => {
-            input.addEventListener("input", updateTotals);
-        });
-    }
-
-    // ✅ Při otevření modalu rovnou přidat první řádek
-    document.addEventListener("DOMContentLoaded", () => {
-        addRow();
-    });
+function removeRow(btn) {
+    btn.closest("tr").remove();
+    reindexRows();  // ✅ znovu po mazání
+    updateTotals();
+}
 </script>
 
 <!-- Js pro lupu -->
@@ -260,4 +256,20 @@ document.getElementById("orderSelect").addEventListener("change", function() {
             })
             .catch(err => console.error("Chyba při načítání objednávky:", err));
     });
+</script>
+
+
+<!-- Doplníme funkci reindexRows() a zavoláme ji po přidání a odstranění řádku: -->
+<script>
+function reindexRows() {
+    let rows = document.querySelectorAll("#itemsTable tbody tr");
+    rows.forEach((row, index) => {
+        row.querySelectorAll("input").forEach(input => {
+            let name = input.getAttribute("name");
+            if (name) {
+                input.setAttribute("name", name.replace(/items\[\d+\]/, `items[${index}]`));
+            }
+        });
+    });
+}
 </script>

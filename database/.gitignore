@@ -1,1 +1,7 @@
 *.sqlite*
+/.env
+/storage/logs/*
+/formular.git
+/formular.git.bfg-report
+bfg.jar
+cacert.pem

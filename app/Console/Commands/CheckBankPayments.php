@@ -7,32 +7,14 @@ use App\Services\BankMailProcessor;
 
 class CheckBankPayments extends Command
 {
-    /**
-     * Název příkazu pro artisan
-     *
-     * @var string
-     */
-    protected $signature = 'bank:check-payments';
+    // název příkazu → voláme "php artisan bank:check"
+    protected $signature = 'bank:check';
 
-    /**
-     * Popis příkazu
-     *
-     * @var string
-     */
-    protected $description = 'Načte nové e-maily z banky a spáruje je s fakturami';
+    protected $description = 'Zkontroluje nové bankovní platby v e-mailu a spáruje s fakturami';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
-        $processor = new BankMailProcessor();
-        $count = $processor->process();
-
-        if ($count > 0) {
-            $this->info("✅ Zpracováno $count nových plateb.");
-        } else {
-            $this->warn("ℹ️ Nebyly nalezeny žádné nové platby.");
-        }
+        $count = (new BankMailProcessor())->process();
+        $this->info("✅ Zpracováno {$count} nových plateb.");
     }
 }

@@ -47,10 +47,18 @@ return [
     ],
 
     'balikovna' => [
-    'api_token'       => env('BALIKOVNA_API_TOKEN'),
-    'secret_key'      => env('BALIKOVNA_SECRET_KEY'),
-    'customer_id'     => env('BALIKOVNA_CUSTOMER_ID'),
-    'contract_number' => env('BALIKOVNA_CONTRACT_NUMBER'),
-],
+        'api_token'       => env('BALIKOVNA_API_TOKEN'),
+        'secret_key'      => env('BALIKOVNA_SECRET_KEY'),
+        'customer_id'     => env('BALIKOVNA_CUSTOMER_ID'),
+        'contract_number' => env('BALIKOVNA_CONTRACT_NUMBER'),
+
+    ],
+
+    'ppl' => [
+        'client_id' => env('PPL_CLIENT_ID'),
+        'client_secret' => env('PPL_CLIENT_SECRET'),
+        'scope' => env('PPL_SCOPE', 'myapi2'),
+    ],
+
 
 ];
