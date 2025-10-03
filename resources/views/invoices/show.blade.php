@@ -153,13 +153,12 @@
                     </button>
                 </form>
 
-                <form action="{{ route('invoices.send', $invoice) }}" method="POST" class="inline-block">
-                    @csrf
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700">
-                        📧 Odeslat fakturu
-                    </button>
-                </form>
+                <!-- místo přímého submitu otevřeme modal -->
+                <button type="button"
+                    onclick="openSendModal('{{ $invoice->id }}', '{{ $invoice->invoice_number }}', '{{ $invoice->order->email }}')"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700">
+                    📧 Odeslat fakturu
+                </button>
 
 
 
@@ -210,3 +209,56 @@
         </div>
     </div>
 </x-app-layout>
+
+<!-- Modal pro odeslání faktury -->
+<div id="sendModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 relative">
+        <button onclick="closeSendModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800">✕</button>
+        <h2 class="text-xl font-bold mb-4">Odeslat fakturu</h2>
+
+        <form id="sendForm" method="POST">
+            @csrf
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">Předmět</label>
+                <input type="text" name="subject" id="emailSubject" required
+                       class="w-full border rounded-lg px-3 py-2">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">Zpráva</label>
+                <textarea name="body" id="emailBody" rows="6" required
+                          class="w-full border rounded-lg px-3 py-2"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeSendModal()" class="px-4 py-2 bg-gray-200 rounded-lg">Zrušit</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">📧 Odeslat</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openSendModal(invoiceId, invoiceNumber, email) {
+    const modal = document.getElementById("sendModal");
+    modal.classList.remove("hidden");
+
+    // Nastavení formuláře
+    const form = document.getElementById("sendForm");
+    form.action = `/invoices/${invoiceId}/send`;
+
+    // Předvyplnění polí
+    document.getElementById("emailSubject").value = `Faktura ${invoiceNumber}`;
+    document.getElementById("emailBody").value =
+`Dobrý den,
+
+v příloze zasíláme fakturu č. ${invoiceNumber}.
+
+S pozdravem,
+Zapichnito3D tým`;
+}
+
+function closeSendModal() {
+    document.getElementById("sendModal").classList.add("hidden");
+}
+</script>

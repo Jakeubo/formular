@@ -193,10 +193,10 @@
     }
 
     function addRow(qty = 1, description = "", price = 0) {
-    let tbody = document.querySelector("#itemsTable tbody");
-    let index = tbody.querySelectorAll("tr").length;
-    let newRow = document.createElement("tr");
-    newRow.innerHTML = `
+        let tbody = document.querySelector("#itemsTable tbody");
+        let index = tbody.querySelectorAll("tr").length;
+        let newRow = document.createElement("tr");
+        newRow.innerHTML = `
         <td class="border p-1 text-center w-20">
             <input type="number" name="items[${index}][quantity]" value="${qty}" min="1"
                    class="border rounded p-1 w-full quantity text-center" required>
@@ -213,17 +213,23 @@
             <button type="button" onclick="removeRow(this)" class="text-red-500">✕</button>
         </td>
     `;
-    tbody.appendChild(newRow);
-    attachEvents(newRow);
-    reindexRows();  // ✅ přepočítáme indexy
-    updateTotals();
-}
+        tbody.appendChild(newRow);
+        attachEvents(newRow);
+        reindexRows(); // ✅ přepočítáme indexy
+        updateTotals();
+    }
 
-function removeRow(btn) {
-    btn.closest("tr").remove();
-    reindexRows();  // ✅ znovu po mazání
-    updateTotals();
-}
+    function removeRow(btn) {
+        btn.closest("tr").remove();
+        reindexRows(); // ✅ znovu po mazání
+        updateTotals();
+    }
+
+    function attachEvents(row) {
+        row.querySelectorAll(".quantity, .unit_price").forEach(input => {
+            input.addEventListener("input", updateTotals);
+        });
+    }
 </script>
 
 <!-- Js pro lupu -->
@@ -261,15 +267,15 @@ function removeRow(btn) {
 
 <!-- Doplníme funkci reindexRows() a zavoláme ji po přidání a odstranění řádku: -->
 <script>
-function reindexRows() {
-    let rows = document.querySelectorAll("#itemsTable tbody tr");
-    rows.forEach((row, index) => {
-        row.querySelectorAll("input").forEach(input => {
-            let name = input.getAttribute("name");
-            if (name) {
-                input.setAttribute("name", name.replace(/items\[\d+\]/, `items[${index}]`));
-            }
+    function reindexRows() {
+        let rows = document.querySelectorAll("#itemsTable tbody tr");
+        rows.forEach((row, index) => {
+            row.querySelectorAll("input").forEach(input => {
+                let name = input.getAttribute("name");
+                if (name) {
+                    input.setAttribute("name", name.replace(/items\[\d+\]/, `items[${index}]`));
+                }
+            });
         });
-    });
-}
+    }
 </script>

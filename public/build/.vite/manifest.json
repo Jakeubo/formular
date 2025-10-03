@@ -1,11 +1,15 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-eueB_48a.css",
+    "file": "assets/app-BxXmgzVI.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "names": [
       "app.css"
     ]
+  },
+  "resources/images/zap.webp": {
+    "file": "assets/zap-Bb7KwCYZ.webp",
+    "src": "resources/images/zap.webp"
   },
   "resources/js/app.js": {
     "file": "assets/app-Bj43h_rG.js",

@@ -66,17 +66,21 @@
         <div>
             <label for="email" class="block text-sm sm:text-base font-medium text-gray-700 mb-1">Email</label>
             <input type="email" name="email" id="email" placeholder="Email" required
+                title="Zadejte platný e-mail (např. jmeno@domena.cz)"
                 class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-[#E5B4D3] rounded-xl shadow-sm 
-                          focus:border-pink-400 focus:ring-2 focus:ring-pink-200 transition text-sm sm:text-base">
+               focus:border-pink-400 focus:ring-2 focus:ring-pink-200 transition text-sm sm:text-base">
         </div>
 
         <!-- Telefon -->
         <div>
             <label for="phone" class="block text-sm sm:text-base font-medium text-gray-700 mb-1">Telefon</label>
-            <input type="text" name="phone" id="phone" placeholder="Telefon" required
+            <input type="tel" name="phone" id="phone" placeholder="Telefon" required
+                pattern="^(\+420)?[0-9]{9}$"
+                title="Zadejte telefonní číslo ve tvaru +420123456789 nebo 123456789"
                 class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-[#E5B4D3] rounded-xl shadow-sm 
-                          focus:border-pink-400 focus:ring-2 focus:ring-pink-200 transition text-sm sm:text-base">
+               focus:border-pink-400 focus:ring-2 focus:ring-pink-200 transition text-sm sm:text-base">
         </div>
+
 
         <!-- Adresa -->
         <div>
@@ -97,8 +101,10 @@
             <div>
                 <label for="zip" class="block text-sm sm:text-base font-medium text-gray-700 mb-1">PSČ</label>
                 <input type="text" name="zip" id="zip" placeholder="PSČ" required
+                    pattern="^\d{3}\s?\d{2}$"
+                    title="Zadejte PSČ ve formátu 12345 nebo 123 45"
                     class="w-full px-3 py-2 sm:px-4 sm:py-3 border border-[#E5B4D3] rounded-xl shadow-sm 
-                              focus:border-pink-400 focus:ring-2 focus:ring-pink-200 transition text-sm sm:text-base">
+               focus:border-pink-400 focus:ring-2 focus:ring-pink-200 transition text-sm sm:text-base">
             </div>
         </div>
 
@@ -163,7 +169,7 @@
             ✨ Odeslat objednávku ✨
         </button>
     </form>
-    
+
     <!-- Modal pro PPL výdejnu -->
 
     <div id="pplModal"

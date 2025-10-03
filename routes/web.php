@@ -21,11 +21,8 @@ Route::get('/', function () {
 Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])
     ->name('invoices.send');
 
-
-Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])
-    ->name('invoices.download')
-    ->middleware('signed');
-
+Route::get('/invoices/download/{token}', [InvoiceController::class, 'download'])
+    ->name('invoices.download');
 // Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])
 //     ->name('invoices.download')
 //     ->middleware('signed');
@@ -42,16 +39,13 @@ Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 // … nahoře
 Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 
-// ✅ Kontrola prostředí (nechceš-li veřejné, dej to pod auth)
-// Route::get('/check-ini', function () {
-//     return [
-//         'loaded'      => php_ini_loaded_file(),
-//         'additional'  => php_ini_scanned_files(),
-//         'soap'        => class_exists(\SoapClient::class),
-//         'php_version' => PHP_VERSION,
-//         'sapi'        => php_sapi_name(),
-//     ];
-// });
+// 📦 Label routes
+Route::get('/labels/wait_label/{token}', [LabelController::class, 'waitLabel'])->name('labels.wait_label');
+Route::get('/labels/pplparcel/{token}', [LabelController::class, 'pplParcelshop'])->name('labels.pplparcel');
+Route::get('/labels/ppl/{token}', [LabelController::class, 'ppl'])->name('labels.ppl');
+Route::get('/labels/zasilkovna/{token}', [LabelController::class, 'zasilkovna'])->name('labels.zasilkovna');
+Route::get('/labels/balikovna/{token}', [LabelController::class, 'balikovna'])->name('labels.balikovna');
+
 
 // 📊 Admin dashboard – chráněný přístup
 Route::middleware(['auth'])->group(function () {
@@ -62,12 +56,6 @@ Route::middleware(['auth'])->group(function () {
     //     $order = Order::findOrFail($id);
     //     return app(LabelController::class)->balikovna($order);
     // });
-    // 📦 Label routes
-    Route::get('/labels/wait_label', [LabelController::class, 'waitLabel'])->name('labels.wait_label');
-    Route::get('/labels/pplparcel/{order}', [LabelController::class, 'pplParcelshop'])->name('labels.pplparcel');
-    Route::get('/labels/ppl/{order}', [LabelController::class, 'ppl'])->name('labels.ppl');
-    Route::get('/labels/zasilkovna/{order}', [LabelController::class, 'zasilkovna'])->name('labels.zasilkovna');
-    Route::get('/labels/balikovna/{order}', [LabelController::class, 'balikovna'])->name('labels.balikovna');
 
     // 💳 Bankovní platby
     Route::post('/bank-payments/check', [BankPaymentController::class, 'check'])->name('bank-payments.check');

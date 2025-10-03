@@ -83,8 +83,7 @@ class BankMailProcessor
         $variableSymbol = $vsMatch[1] ?? null;
 
         if (preg_match('/(?:platba ve výši|Částka[^:]*:)\s*([\d\s,.]+)\s*Kč/u', $bodyText, $amountMatch)) {
-            $amountStr = str_replace([' ', ','], ['', '.'], $amountMatch[1]);
-            $amount = (float) $amountStr;
+            $amount = $this->parseAmount($amountMatch[1]);
         } else {
             $amount = null;
         }
@@ -135,5 +134,26 @@ class BankMailProcessor
 
         Log::warning("BankMail: nepodařilo se vyparsovat částku.");
         return false;
+    }
+    private function parseAmount(string $raw): ?float
+    {
+        if (!$raw) {
+            return null;
+        }
+
+        // odstraníme měnu a nepotřebné znaky (Kč, mezery)
+        $clean = preg_replace('/[^\d,.-]/', '', $raw); // např. "5000,00" nebo "5 000,00"
+
+        // nahradíme čárku tečkou (evropský formát → float)
+        $clean = str_replace(',', '.', $clean);
+
+        // pokud je víc teček (např. tisíce), odstraníme všechny kromě poslední
+        if (substr_count($clean, '.') > 1) {
+            $parts = explode('.', $clean);
+            $last = array_pop($parts);        // desetinná část
+            $clean = implode('', $parts) . '.' . $last;
+        }
+
+        return is_numeric($clean) ? (float) $clean : null;
     }
 }

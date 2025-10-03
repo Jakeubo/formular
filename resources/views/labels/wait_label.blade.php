@@ -48,11 +48,16 @@
   </div>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const orderId = params.get('order');
-    const carrier = params.get('carrier'); // např. ppl, pplparcelshop, balikovna, zasilkovna
-    const pollInterval = 3000;
-    let batchId = null;
+  // token = poslední část cesty
+  const pathParts = window.location.pathname.split('/');
+  const orderId = pathParts[pathParts.length - 1];
+
+  // carrier = query param
+  const params = new URLSearchParams(window.location.search);
+  const carrier = params.get('carrier');
+
+  const pollInterval = 3000;
+  let batchId = null;
 
     async function fetchOrPoll() {
       if (!orderId || !carrier) {

@@ -31,14 +31,17 @@
                     </p>
                 </div>
 
-                <p style="font-size:16px; margin-bottom:30px;">
-                    Fakturu si můžete stáhnout kliknutím na tlačítko níže:
+                <p>{!! nl2br(e($body)) !!}</p>
+
+                <p style="margin-bottom: 20px;">
+                    Fakturu si můžete stáhnout zde:
+                    <a href="{{ $downloadUrl }}"></a>
                 </p>
 
-                <p style="text-align:center;">
+                <p style="text-align:center; margin-top: 20px;">
                     <a href="{{ $downloadUrl }}"
                         style="background:#4f46e5; color:#fff; text-decoration:none; padding:12px 24px; 
-          border-radius:8px; font-weight:bold; font-size:16px;">
+               border-radius:8px; font-weight:bold; font-size:16px; display:inline-block;">
                         📎 Stáhnout fakturu
                     </a>
                 </p>

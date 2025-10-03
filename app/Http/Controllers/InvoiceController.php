@@ -19,11 +19,17 @@ class InvoiceController extends Controller
 
 
 
-    public function send(Invoice $invoice)
+    public function send(Request $request, Invoice $invoice)
     {
         $invoice->load('items', 'order');
 
-        // QR kód …
+        // Validace vstupů (volitelně)
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'body'    => 'required|string',
+        ]);
+
+        // QR kód
         $iban = 'CZ2408000000004396484053';
         $amount = number_format($invoice->total_price, 2, '.', '');
         $vs = $invoice->variable_symbol;
@@ -37,20 +43,17 @@ class InvoiceController extends Controller
                 ->generate($qrString)
         );
 
-        // 🔑 správně podepsaný odkaz (parametr "invoice")
-        $downloadUrl = URL::temporarySignedRoute(
-            'invoices.download',
-            now()->addDays(7),
-            ['invoice' => $invoice->id]   // název parametru MUSÍ být {invoice}
-        );
+       $downloadUrl = route('invoices.download', ['token' => $invoice->order->public_token]);
 
-        // poslat e-mail
-        \Illuminate\Support\Facades\Mail::send('emails.invoice', [
+
+        // Použijeme vlastní subject a body z modalu
+        Mail::send('emails.invoice', [
             'invoice'     => $invoice,
-            'downloadUrl' => $downloadUrl
-        ], function ($message) use ($invoice) {
+            'downloadUrl' => $downloadUrl,
+            'body'        => $request->body,   // to si můžeš přidat do view
+        ], function ($message) use ($invoice, $request) {
             $message->to($invoice->order->email)
-                ->subject("Faktura {$invoice->invoice_number}");
+                ->subject($request->subject);
         });
 
         $invoice->update(['status' => 'sent']);
@@ -61,9 +64,14 @@ class InvoiceController extends Controller
 
 
 
-    public function download(Invoice $invoice)
+
+    public function download(string $token)
     {
-        $invoice->load('items', 'order');
+        // najdeme objednávku podle tokenu
+        $order = \App\Models\Order::where('public_token', $token)->firstOrFail();
+
+        // najdeme k ní fakturu
+        $invoice = $order->invoices()->with('items')->firstOrFail();
 
         $iban = 'CZ2408000000004396484053';
         $amount = number_format($invoice->total_price, 2, '.', '');
@@ -82,26 +90,26 @@ class InvoiceController extends Controller
 
 
 
- public function index(Request $request)
-{
-    $query = Invoice::with('order')->orderBy('created_at', 'desc');
+    public function index(Request $request)
+    {
+        $query = Invoice::with('order')->orderBy('created_at', 'desc');
 
-    if ($search = $request->input('search')) {
-        $query->whereHas('order', function ($q) use ($search) {
-            $q->where('first_name', 'like', "%$search%")
-                ->orWhere('last_name', 'like', "%$search%")
-                ->orWhere('email', 'like', "%$search%");
-        });
+        if ($search = $request->input('search')) {
+            $query->whereHas('order', function ($q) use ($search) {
+                $q->where('first_name', 'like', "%$search%")
+                    ->orWhere('last_name', 'like', "%$search%")
+                    ->orWhere('email', 'like', "%$search%");
+            });
+        }
+
+        $invoices = $query->paginate(10);
+        $orders = Order::orderBy('created_at', 'desc')->get();
+
+        // 🔥 doplníme
+        $shippingMethods = \App\Models\ShippingMethod::all()->keyBy('code');
+
+        return view('invoices.index', compact('invoices', 'orders', 'shippingMethods'));
     }
-
-    $invoices = $query->paginate(10);
-    $orders = Order::orderBy('created_at', 'desc')->get();
-
-    // 🔥 doplníme
-    $shippingMethods = \App\Models\ShippingMethod::all()->keyBy('code');
-
-    return view('invoices.index', compact('invoices', 'orders', 'shippingMethods'));
-}
 
 
 
