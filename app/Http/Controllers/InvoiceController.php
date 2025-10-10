@@ -43,7 +43,9 @@ class InvoiceController extends Controller
                 ->generate($qrString)
         );
 
-       $downloadUrl = route('invoices.download', ['token' => $invoice->order->public_token]);
+        $downloadUrl = route('invoices.download', ['token' => $invoice->download_token]);
+
+
 
 
         // Použijeme vlastní subject a body z modalu
@@ -62,31 +64,30 @@ class InvoiceController extends Controller
     }
 
 
-
-
-
     public function download(string $token)
     {
-        // najdeme objednávku podle tokenu
-        $order = \App\Models\Order::where('public_token', $token)->firstOrFail();
-
-        // najdeme k ní fakturu
-        $invoice = $order->invoices()->with('items')->firstOrFail();
+        // 🔒 Najdeme fakturu podle jejího tokenu, ne podle objednávky
+        $invoice = Invoice::where('download_token', $token)
+            ->with(['items', 'order'])
+            ->firstOrFail();
 
         $iban = 'CZ2408000000004396484053';
         $amount = number_format($invoice->total_price, 2, '.', '');
         $vs = substr(preg_replace('/\D/', '', (string) $invoice->variable_symbol), 0, 10);
-        $msg = iconv('UTF-8', 'ASCII//TRANSLIT', "Zapichnito3d ");
+        $msg = iconv('UTF-8', 'ASCII//TRANSLIT', "Zapichnito3D ");
         $qrString = "SPD*1.0*ACC:$iban*AM:$amount*CC:CZK*X-VS:$vs*MSG:$msg";
 
         $qrCode = base64_encode(
             \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
-                ->size(300)->errorCorrection('M')->generate($qrString)
+                ->size(300)
+                ->errorCorrection('M')
+                ->generate($qrString)
         );
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.pdf', compact('invoice', 'qrCode'))
             ->download("faktura_{$invoice->invoice_number}.pdf");
     }
+
 
 
 
@@ -135,7 +136,19 @@ class InvoiceController extends Controller
 
     public function store(Request $request)
     {
-        $order = \App\Models\Order::findOrFail($request->order_id);
+        $validated = $request->validate([
+            'order_id' => 'required|exists:orders,id',
+            'issue_date' => 'required|date',
+            'due_date' => 'required|date',
+            'company_ico' => 'nullable|string|max:12',
+            'items' => 'required|array|min:1',
+            'items.*.description' => 'required|string',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+        ]);
+
+
+        $order = Order::findOrFail($validated['order_id']);
 
         // vygenerujeme variabilní symbol
         $today = now()->format('Ymd');
@@ -147,18 +160,19 @@ class InvoiceController extends Controller
             'customer_id'     => $order->customer_id,
             'invoice_number'  => 'FA ' . $variableSymbol,
             'variable_symbol' => $variableSymbol,
-            'issue_date'      => $request->issue_date,
-            'due_date'        => $request->due_date,
-            'status'          => 'new', // vždy defaultně Nová
-            'total_price'     => collect($request->items)->sum(
+            'issue_date'      => $validated['issue_date'],
+            'due_date'        => $validated['due_date'],
+            'company_ico'     => $validated['company_ico'] ?? null, // ✅ nové pole
+            'status'          => 'new',
+            'total_price'     => collect($validated['items'])->sum(
                 fn($item) => $item['quantity'] * $item['unit_price']
             ),
-            // doplněno:
             'carrier'         => $order->carrier ?? null,
             'carrier_address' => $order->carrier_address ?? null,
+            'download_token' => Str::random(40),
         ]);
 
-        foreach ($request->items as $item) {
+        foreach ($validated['items'] as $item) {
             $invoice->items()->create([
                 'description' => $item['description'],
                 'quantity'    => $item['quantity'],
@@ -170,6 +184,7 @@ class InvoiceController extends Controller
 
         return redirect()->route('invoices.index')->with('success', 'Faktura byla vytvořena.');
     }
+
 
 
 
@@ -191,27 +206,29 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Invoice $invoice)
     {
-        $request->validate([
+        $validated = $request->validate([
             'order_id' => 'required|exists:orders,id',
             'issue_date' => 'required|date',
             'status' => 'required|in:new,draft,sent,paid',
+            'company_ico' => 'nullable|string|max:12',
+            'items' => 'required|array|min:1',
             'items.*.description' => 'required|string',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unit_price' => 'required|numeric|min:0',
         ]);
 
-        // update hlavičky faktury
         $invoice->update([
-            'order_id'   => $request->order_id,
-            'issue_date' => $request->issue_date,
-            'status'     => $request->status,
+            'order_id'     => $validated['order_id'],
+            'issue_date'   => $validated['issue_date'],
+            'status'       => $validated['status'],
+            'company_ico'  => $validated['company_ico'] ?? null, // ✅ nové pole
         ]);
 
-        // smazat původní položky
+        // smažeme původní položky
         $invoice->items()->delete();
-        $total = 0;
 
-        foreach ($request->items as $item) {
+        $total = 0;
+        foreach ($validated['items'] as $item) {
             $itemTotal = $item['quantity'] * $item['unit_price'];
             $invoice->items()->create([
                 'description' => $item['description'],
@@ -226,8 +243,9 @@ class InvoiceController extends Controller
         $invoice->update(['total_price' => $total]);
 
         return redirect()->route('invoices.show', $invoice)
-            ->with('success', 'Faktura byla upravena');
+            ->with('success', 'Faktura byla upravena.');
     }
+
 
 
     public function destroy(Invoice $invoice)

@@ -143,10 +143,13 @@
                                                 📧 Odeslat fakturu
                                             </button>
 
-                                            <a href="{{ route('invoices.download', $invoice) }}"
-                                                class="block px-4 py-2 text-sm hover:bg-gray-50">
-                                                ⬇️ Stáhnout fakturu
+                                            @if($invoice->download_token)
+                                            <a href="{{ route('invoices.download', ['token' => $invoice->download_token]) }}" class="btn btn-sm btn-primary">
+                                                📎 Stáhnout
                                             </a>
+                                            @else
+                                            <span class="text-gray-400">Není dostupné</span>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

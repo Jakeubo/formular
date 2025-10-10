@@ -84,8 +84,17 @@
                                     <dd class="whitespace-pre-line">{{ $invoice->order->carrier_address }}</dd>
                                 </div>
                                 @endif
+                                @if(optional($invoice->order)->company_ico)
+                                <div>
+                                    <dt class="font-medium">IČO</dt>
+                                    <dd class="text-gray-900">{{ $invoice->order->company_ico }}</dd>
+                                </div>
+                                @endif
+
                             </dl>
+
                         </div>
+
                     </div>
                 </div>
 
@@ -162,10 +171,11 @@
 
 
 
-                <a href="{{ route('invoices.download', $invoice) }}"
+                <a href="{{ route('invoices.download', ['token' => $invoice->download_token]) }}"
                     class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-xl shadow hover:bg-gray-700">
                     ⬇️ Stáhnout
                 </a>
+
 
                 <form action="{{ route('invoices.destroy', $invoice) }}" method="POST" class="inline"
                     onsubmit="return confirm('Opravdu smazat tuto fakturu?');">
@@ -221,13 +231,13 @@
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1">Předmět</label>
                 <input type="text" name="subject" id="emailSubject" required
-                       class="w-full border rounded-lg px-3 py-2">
+                    class="w-full border rounded-lg px-3 py-2">
             </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-1">Zpráva</label>
                 <textarea name="body" id="emailBody" rows="6" required
-                          class="w-full border rounded-lg px-3 py-2"></textarea>
+                    class="w-full border rounded-lg px-3 py-2"></textarea>
             </div>
 
             <div class="flex justify-end gap-3">
@@ -239,26 +249,26 @@
 </div>
 
 <script>
-function openSendModal(invoiceId, invoiceNumber, email) {
-    const modal = document.getElementById("sendModal");
-    modal.classList.remove("hidden");
+    function openSendModal(invoiceId, invoiceNumber, email) {
+        const modal = document.getElementById("sendModal");
+        modal.classList.remove("hidden");
 
-    // Nastavení formuláře
-    const form = document.getElementById("sendForm");
-    form.action = `/invoices/${invoiceId}/send`;
+        // Nastavení formuláře
+        const form = document.getElementById("sendForm");
+        form.action = `/invoices/${invoiceId}/send`;
 
-    // Předvyplnění polí
-    document.getElementById("emailSubject").value = `Faktura ${invoiceNumber}`;
-    document.getElementById("emailBody").value =
-`Dobrý den,
+        // Předvyplnění polí
+        document.getElementById("emailSubject").value = `Faktura ${invoiceNumber}`;
+        document.getElementById("emailBody").value =
+            `Dobrý den,
 
 v příloze zasíláme fakturu č. ${invoiceNumber}.
 
 S pozdravem,
 Zapichnito3D tým`;
-}
+    }
 
-function closeSendModal() {
-    document.getElementById("sendModal").classList.add("hidden");
-}
+    function closeSendModal() {
+        document.getElementById("sendModal").classList.add("hidden");
+    }
 </script>

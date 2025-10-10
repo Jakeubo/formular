@@ -12,7 +12,9 @@
             line-height: 1.5;
         }
 
-        h1, h2, h3 {
+        h1,
+        h2,
+        h3 {
             margin: 0;
             padding: 0;
         }
@@ -81,7 +83,8 @@
         }
 
         thead {
-            display: table-header-group; /* hlavička se opakuje při zalomení */
+            display: table-header-group;
+            /* hlavička se opakuje při zalomení */
         }
 
         tfoot {
@@ -93,7 +96,8 @@
             page-break-after: auto;
         }
 
-        th, td {
+        th,
+        td {
             border: 1px solid #e5e7eb;
             padding: 10px;
         }
@@ -158,18 +162,17 @@
         }
 
         /* FOOTER */
-.footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding-top: 10px;
-    border-top: 1px solid #e5e7eb;
-    text-align: center;
-    font-size: 11px;
-    color: #6b7280;
-}
-
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 11px;
+            color: #6b7280;
+        }
     </style>
 </head>
 
@@ -203,7 +206,11 @@
                 {{ $invoice->order->address }}<br>
                 {{ $invoice->order->zip }} {{ $invoice->order->city }}<br>
                 {{ $invoice->order->country ?? 'ČR' }}<br>
-                {{ $invoice->order->email }}
+                {{ $invoice->order->email }}<br>
+                @if(!empty($invoice->order) && !empty($invoice->order->company_ico))
+                <strong>IČO:</strong> {{ $invoice->order->company_ico }}
+                @endif
+
             </p>
             @else
             <p>-</p>
@@ -257,11 +264,12 @@
     </div>
 
 
-<!-- PATIČKA -->
-<div class="footer">
-    Děkujeme za Vaši objednávku!<br>
-    ZapichniTo3D – www.zapichnito3d.cz | info@zapichnito3d.cz
-</div>
+    <!-- PATIČKA -->
+    <div class="footer">
+        Děkujeme za Vaši objednávku!<br>
+        ZapichniTo3D – www.zapichnito3d.cz | info@zapichnito3d.cz
+    </div>
 
 </body>
+
 </html>

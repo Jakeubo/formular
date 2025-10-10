@@ -79,6 +79,7 @@ class OrderController extends Controller
                     }
                 }
             ],
+            'company_ico' => 'nullable|string|max:12',
         ]);
 
         // 🛡️ Kontrola duplicit

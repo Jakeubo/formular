@@ -13,69 +13,53 @@ use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\URL;
 use App\Models\ShippingMethod;
 
+// 🏠 Domovská stránka – veřejný formulář pro objednávky
 Route::get('/', function () {
     $shippingMethods = ShippingMethod::all();
     return view('order-form', compact('shippingMethods'));
 })->name('form');
 
-Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])
-    ->name('invoices.send');
-
+// 🧾 Veřejné stažení faktury přes token
 Route::get('/invoices/download/{token}', [InvoiceController::class, 'download'])
     ->name('invoices.download');
-// Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])
-//     ->name('invoices.download')
-//     ->middleware('signed');
 
-
-// 🏠 Domovská stránka = veřejný formulář
-// Route::get('/', fn() => view('order-form'))->name('form');
+// 🧾 Odeslání objednávky (z formuláře)
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 
-// // 📑 Faktury – veřejné stažení
-// Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])
-//     ->name('invoices.download');
-
-// … nahoře
-Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
-
-// 📦 Label routes
+// 📦 Výdejní štítky (čekající, balíkovna, zasilkovna, ppl, pplparcel)
 Route::get('/labels/wait_label/{token}', [LabelController::class, 'waitLabel'])->name('labels.wait_label');
 Route::get('/labels/pplparcel/{token}', [LabelController::class, 'pplParcelshop'])->name('labels.pplparcel');
 Route::get('/labels/ppl/{token}', [LabelController::class, 'ppl'])->name('labels.ppl');
 Route::get('/labels/zasilkovna/{token}', [LabelController::class, 'zasilkovna'])->name('labels.zasilkovna');
 Route::get('/labels/balikovna/{token}', [LabelController::class, 'balikovna'])->name('labels.balikovna');
 
+// 🔍 Detail objednávky (pro JS ve fakturačním formuláři)
+Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 
 // 📊 Admin dashboard – chráněný přístup
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings/shipping', [SettingController::class, 'updateShipping'])->name('settings.shipping.update');
-    // Route::get('/test-balikovna/{id}', function ($id) {
-    //     $order = Order::findOrFail($id);
-    //     return app(LabelController::class)->balikovna($order);
-    // });
 
     // 💳 Bankovní platby
     Route::post('/bank-payments/check', [BankPaymentController::class, 'check'])->name('bank-payments.check');
     Route::get('/bank-payments', [BankPaymentController::class, 'index'])->name('bank-payments.index');
 
-    // 📑 Faktury
-    // Route::get('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
-    // Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
+    // 📑 Faktury (admin)
+    Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
     Route::post('/invoices/{invoice}/paid', [InvoiceController::class, 'markAsPaid'])->name('invoices.paid');
-    Route::resource('invoices', InvoiceController::class);
+    Route::resource('invoices', InvoiceController::class)->except(['download']);
 
     // 👥 Zákazníci
-    Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
-    Route::get('/customers/{email}', [CustomerController::class, 'show'])->name('customers.show');
+    Route::resource('customers', CustomerController::class);
 
     // 🔐 Profil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
 
 // ℹ️ phpinfo (jen pro admina, pokud nechceš veřejně)
 Route::middleware(['auth'])->get('/phpinfo', fn() => phpinfo());

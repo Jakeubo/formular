@@ -96,7 +96,14 @@
                 value="new"
                 class="w-full border rounded p-2 bg-gray-100" disabled>
         </div>
-
+        <!-- IČO -->
+        <!-- <div class="mb-4">
+            <label class="block font-medium">IČO (volitelné)</label>
+            <input type="text" name="company_ico"
+                placeholder="Zadejte IČO (pokud je potřeba)"
+                class="w-full border rounded p-2"
+                maxlength="12">
+        </div> -->
         <!-- Datum splatnosti -->
         <div class="mb-4">
             <label class="block font-medium">Datum splatnosti</label>
@@ -104,6 +111,7 @@
                 value="{{ now()->addDays(14)->toDateString() }}"
                 class="w-full border rounded p-2" required>
         </div>
+
 
     </div>
 

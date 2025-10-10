@@ -18,7 +18,9 @@ class Invoice extends Model
         'variable_symbol',
         'carrier',
         'carrier_address',
-        'paid_at', // doporučuji přidat, pokud je ve struktuře DB
+        'paid_at',
+        'download_token',
+        // 'company_ico',
     ];
 
     protected $casts = [
