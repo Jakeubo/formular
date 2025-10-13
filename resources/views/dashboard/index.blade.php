@@ -62,7 +62,7 @@
                     <span id="totalShipping" class="text-green-600 font-semibold">
                         {{ number_format($totalShipping, 2, ',', ' ') }} Kč
                     </span>
-                    <span id="shippingPercent" class="text-gray-500">
+                    <!-- <span id="shippingPercent" class="text-gray-500">
                         <p class="text-md font-medium text-gray-700">
                             Z toho tvoří doprava:
                             <span id="totalShipping" class="text-green-600 font-semibold">
@@ -76,7 +76,7 @@
                             </span>
                         </p>
 
-                    </span>
+                    </span> -->
                 </p>
             </div>
 
@@ -99,6 +99,8 @@
         data-carriers-month='@json($carrierStatsByMonth ?? [])'></div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
     <script>
         const el = document.getElementById('incomeData');
         const incomeData = JSON.parse(el.dataset.income);
@@ -164,6 +166,7 @@
         const ctxCarrier = document.getElementById('carrierChart').getContext('2d');
         let carrierChart = new Chart(ctxCarrier, {
             type: 'doughnut',
+            plugins: [ChartDataLabels], // ✅ aktivace pluginu
             data: {
                 labels: Object.keys(carrierStats),
                 datasets: [{
@@ -185,13 +188,26 @@
                             label: function(ctx) {
                                 const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
                                 const percent = ((ctx.raw / total) * 100).toFixed(1);
-                                return `${ctx.label}: ${ctx.raw} (${percent} %)`;
+                                return `${ctx.label}: ${ctx.raw} (${percent} %)`; // tooltip
                             }
+                        }
+                    },
+                    datalabels: {
+                        color: '#fff',
+                        font: {
+                            weight: 'bold',
+                            size: 13
+                        },
+                        formatter: function(value, ctx) {
+                            const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const percent = ((value / total) * 100).toFixed(1);
+                            return `${percent}%`; // můžeš změnit na `${value}` pro absolutní počet
                         }
                     }
                 }
             }
         });
+
 
         // 🧮 Souhrn přepínač
         const select = document.getElementById('monthSelect');

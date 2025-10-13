@@ -58,7 +58,13 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/invoices/{invoice}/update-status', [InvoiceController::class, 'updateStatus'])
         ->name('invoices.updateStatus');
 
+    Route::get('/label/ppl/{token}', [LabelController::class, 'ppl'])->name('labels.ppl');
+    Route::get('/label/zasilkovna/{token}', [LabelController::class, 'zasilkovna'])->name('labels.zasilkovna');
+    Route::get('/label/balikovna/{token}', [LabelController::class, 'balikovna'])->name('labels.balikovna');
+    Route::get('/label/ppl-parcelshop/{token}', [\App\Http\Controllers\LabelController::class, 'pplParcelshop'])
+        ->name('labels.pplParcelshop');
 
+    Route::get('/label/wait/{token}', [LabelController::class, 'waitLabel'])->name('labels.wait');
     // 🔐 Profil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

@@ -13,53 +13,61 @@ class LabelController extends Controller
     public function pplParcelshop(string $token)
     {
         $order = Order::where('public_token', $token)->firstOrFail();
+
         $clientId     = config('services.ppl.client_id');
         $clientSecret = config('services.ppl.client_secret');
-        $scope        = 'myapi2';
         $tokenUrl     = 'https://api.dhl.com/ecs/ppl/myapi2/login/getAccessToken';
 
-        // 1) Access token
+        // 1️⃣ Access token
         $tokenResp = Http::asForm()->post($tokenUrl, [
             'grant_type'    => 'client_credentials',
             'client_id'     => $clientId,
             'client_secret' => $clientSecret,
-            'scope'         => $scope,
         ]);
 
         if ($tokenResp->failed()) {
+            Log::error('❌ PPL ParcelShop token error', ['body' => $tokenResp->body()]);
             return response()->json(['error' => '❌ Nepodařilo se získat access token PPL'], 500);
         }
 
         $accessToken = $tokenResp->json('access_token');
 
-        // Pokud přišel batchId v query → rovnou se pokusíme stáhnout PDF
+        // 2️⃣ Pokud přišel batchId → pokus o PDF
         if (request()->has('batchId')) {
             $batchId = request('batchId');
-            $labelUrl = "https://api.dhl.com/ecs/ppl/myapi2/shipment/batch/$batchId/label?limit=1&offset=0";
+            $labelUrl = "https://api.dhl.com/ecs/ppl/myapi2/shipment/batch/$batchId/label?limit=1&offset=0&PageSize=A4";
 
-            $pdfResp = Http::withToken($accessToken)
-                ->withHeaders(['Accept' => 'application/pdf'])
-                ->get($labelUrl);
+            $pdfResp = Http::withHeaders([
+                "Authorization" => "Bearer $accessToken",
+                "Accept"        => "application/pdf",
+            ])->get($labelUrl);
 
             if ($pdfResp->ok() && str_contains($pdfResp->header('Content-Type'), 'application/pdf')) {
-                return response($pdfResp->body(), 200)
+                $pdf = $pdfResp->body();
+
+                if (!$order->tracking_number) {
+                    $order->tracking_number = $batchId;
+                    $order->save();
+                }
+
+                Log::info('✅ PPL ParcelShop PDF připraven', ['batchId' => $batchId]);
+                return response($pdf, 200)
                     ->header('Content-Type', 'application/pdf')
-                    ->header('Content-Disposition', "inline; filename=ppl-parcelshop-{$order->id}.pdf");
+                    ->header('Content-Disposition', 'inline; filename="ppl-parcelshop-label.pdf"');
             }
 
-            return response()->json(['error' => '⚠️ Štítek zatím není připraven', 'batchId' => $batchId], 404);
+            Log::warning('⏳ PPL ParcelShop PDF zatím není připraveno', ['batchId' => $batchId]);
+            return response()->json(['status' => 'pending', 'batchId' => $batchId]);
         }
 
-        // 2) Payload pro ParcelShop
+        // 3️⃣ Payload pro vytvoření zásilky ParcelShop
         $payload = [
             "shipments" => [[
-                "productType" => "SMAR",
+                "productType" => "SMAR", // Smart – ParcelShop
                 "referenceId" => (string) $order->id,
                 "note"        => "Zásilka přes ZapichniTo3D.cz",
                 "depot"       => "01",
-                "shipmentSet" => [
-                    "numberOfShipments" => 1
-                ],
+                "shipmentSet" => ["numberOfShipments" => 1],
                 "sender" => [
                     "name"    => "ZapichniTo3D",
                     "street"  => "Žižkova 1031",
@@ -67,11 +75,11 @@ class LabelController extends Controller
                     "zipCode" => "78353",
                     "country" => "CZ",
                     "phone"   => "123456789",
-                    "email"   => "info@zapichnito3d.cz"
+                    "email"   => "info@zapichnito3d.cz",
                 ],
                 "recipient" => [
                     "name"    => "{$order->first_name} {$order->last_name}",
-                    "street"  => $order->carrier_address,
+                    "street"  => mb_substr($order->carrier_address ?? 'ParcelShop', 0, 60),
                     "city"    => $order->city,
                     "zipCode" => $order->zip,
                     "country" => $order->country ?? "CZ",
@@ -79,38 +87,71 @@ class LabelController extends Controller
                     "email"   => $order->email,
                 ],
                 "specificDelivery" => [
-                    "parcelShopCode" => $order->carrier_id
-                ]
+                    "parcelShopCode" => $order->carrier_id, // např. CZ123456
+                ],
             ]],
             "labelSettings" => [
                 "format" => "Pdf",
                 "dpi"    => 300,
                 "completeLabelSettings" => [
-                    "isCompleteLabelRequested" => true
-                ]
-            ]
+                    "isCompleteLabelRequested" => true,
+                ],
+            ],
         ];
 
-        // 3) Vytvoření shipment batch
-        $resp = Http::withToken($accessToken)
-            ->withHeaders(['Content-Type' => 'application/json'])
+        $batchResp = Http::withToken($accessToken)
+            ->withHeaders(["Content-Type" => "application/json"])
             ->post('https://api.dhl.com/ecs/ppl/myapi2/shipment/batch', $payload);
 
-        if ($resp->failed()) {
-            return response()->json(['error' => '❌ PPL API error', 'body' => $resp->body()], 500);
+        if ($batchResp->failed()) {
+            Log::error('❌ PPL ParcelShop create shipment error', [
+                'status' => $batchResp->status(),
+                'body'   => $batchResp->body(),
+            ]);
+            return response()->json(['error' => '❌ PPL API error', 'body' => $batchResp->body()], 500);
         }
 
-        $location = $resp->header('Location');
-        if (!$location) {
-            return response()->json(['error' => '❌ Nepodařilo se získat batchId', 'body' => $resp->body()], 500);
+        // 4️⃣ Získání batchId
+        $location = $batchResp->header('Location');
+        $batchId  = $location ? basename($location) : null;
+
+        if (!$batchId) {
+            Log::error('❌ PPL ParcelShop nevrátil batchId', ['response' => $batchResp->body()]);
+            return response()->json(['error' => '❌ PPL nevrátil batchId.'], 500);
         }
 
-        $parts = explode('/', rtrim($location, '/'));
-        $batchId = end($parts);
+        Log::info('✅ PPL ParcelShop shipment vytvořen', ['order' => $order->id, 'batchId' => $batchId]);
 
-        // vrátíme JSON → front-end si začne pollovat
-        return response()->json(['batchId' => $batchId]);
+        // 5️⃣ Nastavení formátu štítku (PUT)
+        $putUrl = "https://api.dhl.com/ecs/ppl/myapi2/shipment/batch/$batchId";
+        $putPayload = [
+            "labelSettings" => [
+                "format" => "Pdf",
+                "completeLabelSettings" => [
+                    "isCompleteLabelRequested" => true,
+                    "pageSize" => "A4",
+                ],
+            ],
+        ];
+
+        $putResp = Http::withToken($accessToken)
+            ->withHeaders(["Content-Type" => "application/json"])
+            ->put($putUrl, $putPayload);
+
+        if ($putResp->failed()) {
+            Log::warning('⚠️ PPL ParcelShop PUT update error', [
+                'status' => $putResp->status(),
+                'body'   => $putResp->body(),
+            ]);
+        }
+
+        // ✅ Vrať batchId → frontend začne polling
+        return response()->json([
+            'status'  => 'pending',
+            'batchId' => $batchId,
+        ]);
     }
+
 
 
 
@@ -120,11 +161,12 @@ class LabelController extends Controller
     public function ppl(string $token)
     {
         $order = Order::where('public_token', $token)->firstOrFail();
+
         $clientId     = config('services.ppl.client_id');
         $clientSecret = config('services.ppl.client_secret');
         $tokenUrl     = 'https://api.dhl.com/ecs/ppl/myapi2/login/getAccessToken';
 
-        // 1. Získání access tokenu
+        // 1️⃣ Získání access tokenu
         $tokenResp = Http::asForm()->post($tokenUrl, [
             'grant_type'    => 'client_credentials',
             'client_id'     => $clientId,
@@ -136,20 +178,16 @@ class LabelController extends Controller
                 'status' => $tokenResp->status(),
                 'body'   => $tokenResp->body(),
             ]);
-
-            return response()->json([
-                'error' => '❌ PPL token error',
-                'body'  => $tokenResp->body(),
-            ], 500);
+            return response()->json(['error' => '❌ Nepodařilo se získat access token.'], 500);
         }
 
         $accessToken = $tokenResp->json('access_token');
         Log::info('✅ PPL access token získán', ['token' => $accessToken]);
 
-        // 2. Pokud máme batchId → pokus o PDF
+        // 2️⃣ Pokud už máme batchId → stáhnout PDF štítek
         if (request()->has('batchId')) {
-            $batchId  = request('batchId');
-            $labelUrl = "https://api.dhl.com/ecs/ppl/myapi2/shipment/batch/$batchId/label?limit=1&offset=0";
+            $batchId = request('batchId');
+            $labelUrl = "https://api.dhl.com/ecs/ppl/myapi2/shipment/batch/$batchId/label?limit=1&offset=0&PageSize=A4";
 
             $pdfResp = Http::withHeaders([
                 "Authorization" => "Bearer $accessToken",
@@ -160,26 +198,21 @@ class LabelController extends Controller
                 $pdf = $pdfResp->body();
 
                 if (!$order->tracking_number) {
-                    $order->tracking_number = $batchId; // ⚠️ lepší parcelCode, pokud bude dostupný
+                    $order->tracking_number = $batchId;
                     $order->save();
                 }
 
                 Log::info('✅ PPL štítek PDF připraven', ['order' => $order->id, 'batchId' => $batchId]);
-
                 return response($pdf, 200)
                     ->header('Content-Type', 'application/pdf')
                     ->header('Content-Disposition', 'inline; filename="ppl-label.pdf"');
             }
 
             Log::warning('⏳ PPL PDF ještě není připraveno', ['batchId' => $batchId]);
-
-            return response()->json([
-                'status'  => 'pending',
-                'batchId' => $batchId,
-            ]);
+            return response()->json(['status' => 'pending', 'batchId' => $batchId]);
         }
 
-        // 3. Pokud batchId není → vytvoření shipmentu
+        // 3️⃣ Vytvoření zásilky (pokud batchId ještě není)
         $payload = [
             "shipments" => [[
                 "referenceId" => (string) $order->id,
@@ -224,11 +257,7 @@ class LabelController extends Controller
                 'status' => $batchResp->status(),
                 'body'   => $batchResp->body(),
             ]);
-
-            return response()->json([
-                'error' => '❌ PPL create shipment error',
-                'body'  => $batchResp->body(),
-            ], 500);
+            return response()->json(['error' => '❌ Chyba při vytvoření zásilky.', 'body' => $batchResp->body()], 500);
         }
 
         $location = $batchResp->header('Location');
@@ -236,14 +265,65 @@ class LabelController extends Controller
 
         if (!$batchId) {
             Log::error('❌ PPL nevrátil batchId', ['response' => $batchResp->body()]);
-
             return response()->json(['error' => '❌ PPL nevrátil batchId.'], 500);
+        }
+
+        // 4️⃣ Aktualizace štítku (PUT)
+        $putUrl = "https://api.dhl.com/ecs/ppl/myapi2/shipment/batch/$batchId";
+        $putPayload = [
+            "labelSettings" => [
+                "format" => "Pdf",
+                "completeLabelSettings" => [
+                    "isCompleteLabelRequested" => true,
+                    "pageSize" => "A4"
+                ]
+            ]
+        ];
+
+        $putResp = Http::withToken($accessToken)
+            ->withHeaders(["Content-Type" => "application/json"])
+            ->put($putUrl, $putPayload);
+
+        if ($putResp->failed()) {
+            Log::error('⚠️ PPL PUT batch update error', [
+                'status' => $putResp->status(),
+                'body'   => $putResp->body(),
+            ]);
         }
 
         Log::info('✅ PPL shipment vytvořen', ['order' => $order->id, 'batchId' => $batchId]);
 
-        return response()->json(['batchId' => $batchId]);
+        // Počkej pár sekund, než API zpracuje štítek
+        sleep(5);
+
+        // 5️⃣ Pokus o stažení štítku
+        $labelUrl = "https://api.dhl.com/ecs/ppl/myapi2/shipment/batch/$batchId/label?limit=1&offset=0&PageSize=A4";
+        $pdfResp = Http::withHeaders([
+            "Authorization" => "Bearer $accessToken",
+            "Accept"        => "application/pdf",
+        ])->get($labelUrl);
+
+        if ($pdfResp->ok() && str_contains($pdfResp->header('Content-Type'), 'application/pdf')) {
+            $pdf = $pdfResp->body();
+
+            if (!$order->tracking_number) {
+                $order->tracking_number = $batchId;
+                $order->save();
+            }
+
+            Log::info('✅ PPL štítek PDF stažen ihned po vytvoření', ['batchId' => $batchId]);
+            return response($pdf, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="ppl-label.pdf"');
+        }
+
+        // Pokud ještě není hotový, vrať pending
+        return response()->json([
+            'status'  => 'pending',
+            'batchId' => $batchId,
+        ]);
     }
+
 
 
 

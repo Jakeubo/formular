@@ -35,8 +35,14 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("ppl-parcelshop-map", function (event) {
         if (event.detail) {
             const detail = event.detail;
-            carrierIdInput.value = detail.id || detail.code || "";
-            carrierAddressInput.value = `${detail.name}, ${detail.street}, ${detail.city}`;
+            // console.log("📦 PPL výdejna detail:", detail);
+
+            // 🟢 správný kód
+            carrierIdInput.value = detail.code || detail.dhlPsId || "";
+
+            carrierAddressInput.value = `${detail.name}, ${
+                detail.street || ""
+            }, ${detail.city || ""}`;
 
             selectedText.classList.remove("hidden");
             selectedText.textContent = `📦 Vybráno PPL výdejna: ${carrierAddressInput.value}`;
