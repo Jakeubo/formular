@@ -31,7 +31,8 @@ class Invoice extends Model
 
     public function items()
     {
-        return $this->hasMany(InvoiceItem::class);
+      return $this->hasMany(\App\Models\InvoiceItem::class);
+        
     }
 
     public function order()
@@ -43,4 +44,6 @@ class Invoice extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    
 }

@@ -39,14 +39,23 @@
                         </thead>
                         <tbody>
                             @forelse($payments as $payment)
-                            <tr class="border-t">
-                                <td class="px-3 py-2">{{ $payment->id }}</td>
+                            @php
+                            $isNew = $payment->created_at && $payment->created_at->gt(now()->subDay());
+                            @endphp
+
+                            <tr class="border-t {{ $isNew ? 'bg-green-50' : '' }}">
+                                <td class="px-3 py-2 flex items-center gap-2">
+                                    {{ $payment->id }}
+                                    @if($isNew)
+                                    <span class="text-xs font-semibold bg-green-100 text-green-800 px-2 py-1 rounded-full">Nová</span>
+                                    @endif
+                                </td>
                                 <td class="px-3 py-2">{{ $payment->variable_symbol ?? '—' }}</td>
                                 <td class="px-3 py-2">{{ number_format($payment->amount, 2, ',', ' ') }} Kč</td>
                                 <td class="px-3 py-2">{{ $payment->account_number ?? '—' }}</td>
                                 <td class="px-3 py-2">{{ $payment->received_at ? $payment->received_at->format('d.m.Y H:i') : '—' }}</td>
-
                             </tr>
+
                             @empty
                             <tr>
                                 <td colspan="5" class="px-3 py-4 text-center text-gray-500">

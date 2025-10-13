@@ -39,7 +39,7 @@
                         <!-- Vyhledávání -->
                         <form method="GET" action="{{ route('invoices.index') }}" class="mb-4 flex gap-2">
                             <input type="text" name="search" value="{{ request('search') }}"
-                                placeholder="Hledat podle jména nebo emailu..."
+                                placeholder="Hledat podle jména, e-mailu, čísla faktury nebo názvu položky..."
                                 class="flex-grow border border-gray-300 rounded-lg px-3 py-2 text-sm 
                       focus:ring-indigo-500 focus:border-indigo-500">
                             <button type="submit"
@@ -90,25 +90,57 @@
                                         {{ number_format($invoice->total_price, 2, ',', ' ') }} Kč
                                     </td>
 
-                                    <!-- Status -->
-                                    <td class="px-4 py-3">
-                                        @switch($invoice->status)
-                                        @case('new')
-                                        <span class="px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">🆕 Nová</span>
-                                        @break
-                                        @case('sent')
-                                        <span class="px-2 py-1 rounded-lg bg-blue-100 text-blue-700 text-xs font-medium">📤 Odeslaná</span>
-                                        @break
-                                        @case('paid')
-                                        <span class="px-2 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-medium">✅ Zaplacená</span>
-                                        @break
-                                        @case('overdue')
-                                        <span class="px-2 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-medium">⏰ Po splatnosti</span>
-                                        @break
-                                        @default
-                                        <span class="px-2 py-1 rounded-lg bg-gray-200 text-gray-800 text-xs font-medium">{{ $invoice->status }}</span>
-                                        @endswitch
+                                    <td class="px-4 py-3 relative status-wrapper">
+                                        <div class="flex items-center gap-1">
+                                            @switch($invoice->status)
+                                            @case('new')
+                                            <span class="px-2 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">🆕 Nová</span>
+                                            @break
+
+                                            @case('sent')
+                                            <span class="px-2 py-1 rounded-lg bg-blue-100 text-blue-700 text-xs font-medium">📧 E-mail odeslán</span>
+                                            @break
+
+                                            @case('paid')
+                                            <span class="px-2 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-medium">💰 Zaplacená</span>
+                                            <!-- 🔽 šipka pouze pro zaplacené -->
+                                            <button onclick="toggleStatusDropdown('{{ $invoice->id }}')"
+                                                class="text-gray-400 hover:text-gray-600 text-xs ml-1">▼</button>
+                                            @break
+
+                                            @case('shipped')
+                                            <span class="px-2 py-1 rounded-lg bg-purple-100 text-purple-700 text-xs font-medium">📦 Zásilka odeslaná</span>
+                                            @break
+
+                                            @case('overdue')
+                                            <span class="px-2 py-1 rounded-lg bg-red-100 text-red-700 text-xs font-medium">⏰ Po splatnosti</span>
+                                            @break
+
+                                            @default
+                                            <span class="px-2 py-1 rounded-lg bg-gray-200 text-gray-800 text-xs font-medium">{{ $invoice->status }}</span>
+                                            @endswitch
+                                        </div>
+
+                                        <!-- Dropdown statusů -->
+                                        @if($invoice->status === 'paid')
+                                        <div id="status-dropdown-{{ $invoice->id }}"
+                                            class="hidden absolute bg-white border rounded-lg shadow-lg mt-1 z-10 w-44">
+                                            <form method="POST" action="{{ route('invoices.updateStatus', $invoice) }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button name="status" value="shipped"
+                                                    class="block w-full text-left px-3 py-2 text-sm hover:bg-purple-50 text-purple-600">
+                                                    📦 Označit jako odeslanou
+                                                </button>
+                                            </form>
+                                        </div>
+                                        @endif
                                     </td>
+
+
+
+
+
 
                                     <!-- Splatnost / Platba -->
                                     <td class="px-4 py-3 text-sm">
@@ -256,4 +288,23 @@ Zapichnito3D tým`;
     function closeSendModal() {
         document.getElementById("sendModal").classList.add("hidden");
     }
+</script>
+
+<script>
+    function toggleStatusDropdown(id) {
+        document.querySelectorAll("[id^='status-dropdown-']").forEach(el => {
+            if (el.id === `status-dropdown-${id}`) {
+                el.classList.toggle("hidden");
+            } else {
+                el.classList.add("hidden");
+            }
+        });
+    }
+
+    // Klik mimo dropdown → zavřít
+    document.addEventListener("click", e => {
+        if (!e.target.closest(".status-wrapper")) {
+            document.querySelectorAll("[id^='status-dropdown-']").forEach(el => el.classList.add("hidden"));
+        }
+    });
 </script>

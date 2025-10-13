@@ -93,24 +93,33 @@ class InvoiceController extends Controller
 
     public function index(Request $request)
     {
-        $query = Invoice::with('order')->orderBy('created_at', 'desc');
+        $search = $request->input('search');
 
-        if ($search = $request->input('search')) {
-            $query->whereHas('order', function ($q) use ($search) {
-                $q->where('first_name', 'like', "%$search%")
-                    ->orWhere('last_name', 'like', "%$search%")
-                    ->orWhere('email', 'like', "%$search%");
+        $query = Invoice::with(['order', 'items'])
+            ->orderBy('created_at', 'desc');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhere('variable_symbol', 'like', "%{$search}%")
+                    ->orWhereHas('order', function ($sub) use ($search) {
+                        $sub->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('items', function ($sub) use ($search) {
+                        $sub->where('description', 'like', "%{$search}%");
+                    });
             });
         }
 
         $invoices = $query->paginate(10);
         $orders = Order::orderBy('created_at', 'desc')->get();
-
-        // 🔥 doplníme
         $shippingMethods = \App\Models\ShippingMethod::all()->keyBy('code');
 
         return view('invoices.index', compact('invoices', 'orders', 'shippingMethods'));
     }
+
 
 
 
@@ -186,10 +195,6 @@ class InvoiceController extends Controller
     }
 
 
-
-
-
-
     public function show(Invoice $invoice)
     {
         // Načteme i související data
@@ -209,7 +214,7 @@ class InvoiceController extends Controller
         $validated = $request->validate([
             'order_id' => 'required|exists:orders,id',
             'issue_date' => 'required|date',
-            'status' => 'required|in:new,draft,sent,paid',
+            'status' => 'required|in:new,draft,sent,paid,shipped',
             'company_ico' => 'nullable|string|max:12',
             'items' => 'required|array|min:1',
             'items.*.description' => 'required|string',
@@ -252,5 +257,19 @@ class InvoiceController extends Controller
     {
         $invoice->delete();
         return redirect()->route('invoices.index')->with('success', 'Faktura byla smazána');
+    }
+
+    public function updateStatus(Request $request, Invoice $invoice)
+    {
+        $newStatus = $request->input('status');
+
+        // Kontrola logiky: zásilku lze odeslat jen po zaplacení
+        if ($newStatus === 'shipped' && $invoice->status !== 'paid') {
+            return back()->with('error', 'Zásilku lze označit jako odeslanou pouze po zaplacení faktury.');
+        }
+
+        $invoice->update(['status' => $newStatus]);
+
+        return back()->with('success', "✅ Status faktury {$invoice->invoice_number} byl změněn na {$newStatus}.");
     }
 }

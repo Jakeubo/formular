@@ -200,7 +200,7 @@
         document.getElementById("grandTotal").innerText = grandTotal.toFixed(2) + " Kč";
     }
 
-    function addRow(qty = 1, description = "", price = 0) {
+    function addRow(qty = 1, description = "Zápich - ", price = 0) {
         let tbody = document.querySelector("#itemsTable tbody");
         let index = tbody.querySelectorAll("tr").length;
         let newRow = document.createElement("tr");

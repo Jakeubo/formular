@@ -54,6 +54,11 @@ Route::middleware(['auth'])->group(function () {
     // 👥 Zákazníci
     Route::resource('customers', CustomerController::class);
 
+    //změna statusu faktury
+    Route::patch('/invoices/{invoice}/update-status', [InvoiceController::class, 'updateStatus'])
+        ->name('invoices.updateStatus');
+
+
     // 🔐 Profil
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
