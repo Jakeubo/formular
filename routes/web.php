@@ -27,7 +27,7 @@ Route::get('/invoices/download/{token}', [InvoiceController::class, 'download'])
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 
 // 📦 Výdejní štítky (čekající, balíkovna, zasilkovna, ppl, pplparcel)
-Route::get('/labels/wait_label/{token}', [LabelController::class, 'waitLabel'])->name('labels.wait_label');
+Route::get('/labels/wait_label/{token}', [LabelController::class, 'waitLabel'])->name('labels.wait');
 Route::get('/labels/pplparcel/{token}', [LabelController::class, 'pplParcelshop'])->name('labels.pplparcel');
 Route::get('/labels/ppl/{token}', [LabelController::class, 'ppl'])->name('labels.ppl');
 Route::get('/labels/zasilkovna/{token}', [LabelController::class, 'zasilkovna'])->name('labels.zasilkovna');

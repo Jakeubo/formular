@@ -108,7 +108,7 @@ class OrderController extends Controller
                     . "**Mail:** {$order->email}\n"
                     . "**Telefon:** {$order->phone}\n"
                     . "**Osobní vyzvednutí:** Sushi hub\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', [
+                    . "[Vytisknout štítek](" . route('labels.wait', [
                         'token'   => $order->public_token,   // ✅ token
                         'carrier' => 'osobni'
                     ]) . ")\n\n"
@@ -120,7 +120,7 @@ class OrderController extends Controller
                     . "**Mail:** {$order->email}\n"
                     . "**Telefon:** {$order->phone}\n"
                     . "**Výdejní místo (Zásilkovna):** {$order->carrier_id}, {$order->carrier_address}\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', [
+                    . "[Vytisknout štítek](" . route('labels.wait', [
                         'token'   => $order->public_token,   // ✅ token
                         'carrier' => 'zasilkovna'
                     ]) . ")\n\n"
@@ -132,7 +132,7 @@ class OrderController extends Controller
                     . "**Mail:** {$order->email}\n"
                     . "**Telefon:** {$order->phone}\n"
                     . "**Výdejní místo (Balíkovna):** {$order->carrier_id}, {$order->carrier_address}\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', [
+                    . "[Vytisknout štítek](" . route('labels.wait', [
                         'token'   => $order->public_token,   // ✅ token
                         'carrier' => 'balikovna'
                     ]) . ")\n\n"
@@ -145,7 +145,7 @@ class OrderController extends Controller
                     . "**Telefon:** {$order->phone}\n"
                     . "**Adresa:** {$order->address}, {$order->city}, {$order->zip}\n"
                     . "**Dopravce:** PPL Home\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', [
+                    . "[Vytisknout štítek](" . route('labels.wait', [
                         'token'   => $order->public_token,   // ✅ token
                         'carrier' => 'pplhome'
                     ]) . ")\n\n"
@@ -157,7 +157,7 @@ class OrderController extends Controller
                     . "**Mail:** {$order->email}\n"
                     . "**Telefon:** {$order->phone}\n"
                     . "**Výdejní místo (PPL ParcelShop):** {$order->carrier_id}, {$order->carrier_address}\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', [
+                    . "[Vytisknout štítek](" . route('labels.wait', [
                         'token'   => $order->public_token,   // ✅ token
                         'carrier' => 'pplparcel'
                     ]) . ")\n\n"
@@ -169,7 +169,7 @@ class OrderController extends Controller
                     . "**Mail:** {$order->email}\n"
                     . "**Telefon:** {$order->phone}\n"
                     . "**Dopravce:** {$order->carrier}\n\n"
-                    . "[Vytisknout štítek](" . route('labels.wait_label', [
+                    . "[Vytisknout štítek](" . route('labels.wait', [
                         'token'   => $order->public_token,   // ✅ token
                         'carrier' => 'other'
                     ]) . ")\n\n"

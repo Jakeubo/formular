@@ -51,7 +51,7 @@
                 </div>
 
                 <p class="text-lg font-semibold text-gray-800">
-                    Celkové příjmy:
+                    Celkové příjmy za rok {{ $selectedYear }}:
                     <span id="totalIncome" class="text-indigo-600">
                         {{ number_format(array_sum($months->toArray()), 2, ',', ' ') }} Kč
                     </span>
