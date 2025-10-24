@@ -16,57 +16,59 @@ class BankMailProcessor
         $client = Client::account('default');
         $client->connect();
 
-        // ✅ log připojení
-        if ($client->isConnected()) {
-            Log::info('BankMail: IMAP připojení OK');
-        } else {
+        if (!$client->isConnected()) {
             Log::error('BankMail: IMAP připojení selhalo');
             return 0;
         }
 
-        // ✅ vypíšeme všechny složky
-        foreach ($client->getFolders() as $f) {
-            Log::info('BankMail: dostupná složka -> ' . $f->path);
-        }
+        Log::info('BankMail: IMAP připojeno OK');
 
-        // ✅ zkusíme nejdřív INBOX
-        // místo INBOX:
         try {
-            $folder = $client->getFolder('Bank');
+            // ⬇️ zkusíme více variant složek
+            $folders = ['Bank', 'INBOX.Bank', 'Inbox', 'INBOX'];
+            $folder = null;
+            foreach ($folders as $f) {
+                try {
+                    $folder = $client->getFolder($f);
+                    Log::info("BankMail: nalezena složka -> {$f}");
+                    break;
+                } catch (\Exception $e) {
+                    continue;
+                }
+            }
 
-            // vezmeme posledních 50 zpráv od včerejška
+            if (!$folder) {
+                Log::error('BankMail: žádná platná složka nenalezena');
+                return 0;
+            }
+
             $messages = $folder->messages()
                 ->all()
-                ->limit(50)
+                ->limit(500)
                 ->get();
-
-            Log::info('BankMail: počet zpráv ve složce Bank -> ' . $messages->count());
         } catch (\Exception $e) {
-            Log::error('BankMail: chyba při čtení složky Bank -> ' . $e->getMessage());
+            Log::error('BankMail: chyba při čtení složky -> ' . $e->getMessage());
             return 0;
         }
 
-        // ✅ zpracujeme zprávy
+        Log::info('BankMail: načteno ' . $messages->count() . ' zpráv.');
+
+        $knownSymbols = Invoice::pluck('variable_symbol')->filter()->toArray();
+
         foreach ($messages as $msg) {
-            $from       = $msg->getFrom()[0]->mail ?? null;
-            $subject    = $msg->getSubject();
-            $receivedAt = $msg->getDate();
             $messageId  = $msg->getMessageId();
+            $receivedAt = $msg->getDate();
 
             $body = $msg->getHTMLBody() ?: $msg->getTextBody() ?: $msg->getRawBody();
-            $bodyClean = preg_replace('/<style\b[^>]*>.*?<\/style>/is', '', $body);
-            $bodyClean = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $bodyClean);
-            $bodyText  = strip_tags(html_entity_decode($bodyClean));
+            $bodyText = strip_tags(html_entity_decode($body));
 
-            Log::info('BankMail: kontrola mailu', [
-                'from'      => $from,
-                'subject'   => $subject,
-                'date'      => $receivedAt,
-                'messageId' => $messageId,
-            ]);
+            $result = $this->handleEmail($bodyText, $receivedAt, $messageId, $knownSymbols);
 
-            if ($this->handleEmail($bodyText, $receivedAt, $messageId)) {
+            if ($result) {
                 $processed++;
+                Log::info("BankMail: ✅ nová platba uložena");
+            } else {
+                Log::info("BankMail: ⏭️ zpráva přeskočena");
             }
 
             $msg->setFlag('Seen');
@@ -76,84 +78,93 @@ class BankMailProcessor
         return $processed;
     }
 
-
-    private function handleEmail(string $bodyText, $receivedAt, ?string $messageId): bool
+    private function handleEmail(string $bodyText, $receivedAt, ?string $messageId, array $knownSymbols): bool
     {
-        preg_match('/Variabilní symbol:\s*(\d+)/u', $bodyText, $vsMatch);
+        preg_match('/(?:Variabilní symbol|VS)\s*[:.]?\s*(\d{3,10})/iu', $bodyText, $vsMatch);
         $variableSymbol = $vsMatch[1] ?? null;
+
+        if (!$variableSymbol) {
+            Log::warning("BankMail: žádný VS nenalezen");
+            return false;
+        }
+
+        if (!in_array($variableSymbol, $knownSymbols)) {
+            Log::info("BankMail: VS {$variableSymbol} nepatří k našim fakturám");
+            return false;
+        }
 
         if (preg_match('/(?:platba ve výši|Částka[^:]*:)\s*([\d\s,.]+)\s*Kč/u', $bodyText, $amountMatch)) {
             $amount = $this->parseAmount($amountMatch[1]);
         } else {
             $amount = null;
+            Log::warning("BankMail: částka nenalezena pro VS {$variableSymbol}");
         }
 
-        preg_match('/Číslo účtu protistrany:\s*([\d\-]+\/\d{4})/u', $bodyText, $accMatch);
-        $accountNumber = $accMatch[1] ?? null;
+        // Nejprve zkusíme najít "Číslo účtu protistrany"
+        if (preg_match('/Číslo účtu protistrany[:.]?\s*([\d\-]+\/\d{4})/iu', $bodyText, $accMatch)) {
+            $accountNumber = $accMatch[1];
+        } elseif (preg_match('/Číslo účtu[:.]?\s*([\d\-]+\/\d{4})/iu', $bodyText, $accMatch)) {
+            // fallback – když by "protistrany" chybělo
+            $accountNumber = $accMatch[1];
+        } else {
+            $accountNumber = null;
+        }
 
-        Log::info('BankMail: parsování', [
-            'vs'         => $variableSymbol,
-            'amount_raw' => $amountMatch[1] ?? null,
-            'amount'     => $amount,
-            'account'    => $accountNumber,
-            'received'   => $receivedAt,
-            'message_id' => $messageId,
-        ]);
+        // $accountNumber = $accMatch[1] ?? null;
 
-        if ($amount) {
-            // vytvoříme nebo najdeme platbu
-            $payment = BankPayment::firstOrCreate(
-                ['message_id' => $messageId],
-                [
-                    'variable_symbol' => $variableSymbol,
-                    'amount'          => $amount,
-                    'account_number'  => $accountNumber,
-                    'raw_text'        => $bodyText,
-                    'received_at'     => $receivedAt,
-                ]
-            );
+        $payment = BankPayment::firstOrCreate(
+            ['message_id' => $messageId],
+            [
+                'variable_symbol' => $variableSymbol,
+                'amount'          => $amount,
+                'account_number'  => $accountNumber,
+                'raw_text'        => mb_substr($bodyText, 0, 2000),
+                'received_at'     => $receivedAt,
+            ]
+        );
 
-            // pokud je faktura k dispozici a sedí částka, označíme ji jako zaplacenou
-            if ($variableSymbol) {
-                $invoice = Invoice::where('variable_symbol', $variableSymbol)
-                    ->where('status', '!=', 'paid')
-                    ->first();
+        // 🚫 Pokud platba už dříve existovala, nezasahujeme do faktury
+        if (!$payment->wasRecentlyCreated) {
+            Log::info("BankMail: platba s VS {$variableSymbol} už existovala – faktura se nemění");
+            return false;
+        }
 
-                if ($invoice && (float) $invoice->total_price == $amount) {
-                    $invoice->update([
-                        'status'  => 'paid',
-                        'paid_at' => now(),
-                    ]);
-                    Log::info("BankMail: faktura {$invoice->invoice_number} označena jako zaplacená.");
-                }
+        // ✅ Platba je nová – teď teprve kontrolujeme fakturu
+        $invoice = Invoice::where('variable_symbol', $variableSymbol)->first();
+
+        if ($invoice && (float) $invoice->total_price == $amount) {
+            $status = mb_strtolower(trim($invoice->status));
+
+            if ($status === 'shipped') {
+                Log::info("BankMail: faktura {$invoice->invoice_number} přeskočena – již odesláno");
+            } elseif ($status === 'paid') {
+                Log::info("BankMail: faktura {$invoice->invoice_number} již zaplacená, bez změny");
+            } else {
+                $invoice->update([
+                    'status'  => 'paid',
+                    'paid_at' => now(),
+                ]);
+                Log::info("BankMail: faktura {$invoice->invoice_number} označena jako zaplacená (VS {$variableSymbol})");
             }
-
-            // vrátíme true jen pokud je to opravdu nová platba
-            return $payment->wasRecentlyCreated;
         }
 
-        Log::warning("BankMail: nepodařilo se vyparsovat částku.");
-        return false;
+
+        return true;
     }
+
+
     private function parseAmount(string $raw): ?float
     {
-        if (!$raw) {
-            return null;
-        }
-
-        // odstraníme měnu a nepotřebné znaky (Kč, mezery)
-        $clean = preg_replace('/[^\d,.-]/', '', $raw); // např. "5000,00" nebo "5 000,00"
-
-        // nahradíme čárku tečkou (evropský formát → float)
+        $clean = preg_replace('/[^\d,.-]/', '', $raw);
         $clean = str_replace(',', '.', $clean);
 
-        // pokud je víc teček (např. tisíce), odstraníme všechny kromě poslední
+        // odstraníme všechny tečky kromě poslední
         if (substr_count($clean, '.') > 1) {
             $parts = explode('.', $clean);
-            $last = array_pop($parts);        // desetinná část
+            $last = array_pop($parts);
             $clean = implode('', $parts) . '.' . $last;
         }
 
-        return is_numeric($clean) ? (float) $clean : null;
+        return is_numeric($clean) ? round((float)$clean, 2) : null;
     }
 }

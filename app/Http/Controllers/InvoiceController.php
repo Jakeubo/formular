@@ -91,34 +91,41 @@ class InvoiceController extends Controller
 
 
 
-    public function index(Request $request)
-    {
-        $search = $request->input('search');
+ public function index(Request $request)
+{
+    $search = $request->input('search');
 
-        $query = Invoice::with(['order', 'items'])
-            ->orderBy('created_at', 'desc');
+    $query = Invoice::with(['order', 'items'])
+        ->orderBy('created_at', 'desc');
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%")
-                    ->orWhere('variable_symbol', 'like', "%{$search}%")
-                    ->orWhereHas('order', function ($sub) use ($search) {
-                        $sub->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('items', function ($sub) use ($search) {
-                        $sub->where('description', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        $invoices = $query->paginate(10);
-        $orders = Order::orderBy('created_at', 'desc')->get();
-        $shippingMethods = \App\Models\ShippingMethod::all()->keyBy('code');
-
-        return view('invoices.index', compact('invoices', 'orders', 'shippingMethods'));
+    if ($search) {
+        $query->where(function ($q) use ($search) {
+            $q->where('invoice_number', 'like', "%{$search}%")
+                ->orWhere('variable_symbol', 'like', "%{$search}%")
+                ->orWhereHas('order', function ($sub) use ($search) {
+                    $sub->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                })
+                ->orWhereHas('items', function ($sub) use ($search) {
+                    $sub->where('description', 'like', "%{$search}%");
+                });
+        });
     }
+
+    // 💾 Počet záznamů na stránku (uloží se do session)
+    $perPage = $request->input('per_page', session('invoices_per_page', 20));
+    if ($request->has('per_page')) {
+        session(['invoices_per_page' => $perPage]);
+    }
+
+    $invoices = $query->paginate($perPage);
+    $orders = Order::orderBy('created_at', 'desc')->get();
+    $shippingMethods = \App\Models\ShippingMethod::all()->keyBy('code');
+
+    return view('invoices.index', compact('invoices', 'orders', 'shippingMethods', 'perPage'));
+}
+
 
 
 

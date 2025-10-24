@@ -24,18 +24,14 @@
             }, 8000);
         </script>
         @endif
-
-
     </x-slot>
 
     <div class="py-10 bg-gray-50">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white rounded-2xl shadow border border-gray-100 p-6">
-
                 <!-- Tabulka -->
                 <div class="overflow-x-auto">
                     <div class="bg-white rounded-2xl shadow border border-gray-100 p-6">
-
                         <!-- Vyhledávání -->
                         <form method="GET" action="{{ route('invoices.index') }}" class="mb-4 flex gap-2">
                             <input type="text" name="search" value="{{ request('search') }}"
@@ -137,11 +133,6 @@
                                         @endif
                                     </td>
 
-
-
-
-
-
                                     <!-- Splatnost / Platba -->
                                     <td class="px-4 py-3 text-sm">
                                         @if($invoice->paid_at)
@@ -170,7 +161,7 @@
                                         <div id="dropdown-{{ $invoice->id }}"
                                             class="hidden absolute right-0 mt-2 w-44 bg-white border rounded-xl shadow-lg z-10 overflow-hidden">
                                             <button type="button"
-                                                onclick="openSendModal('{{ $invoice->id }}', '{{ $invoice->invoice_number }}', '{{ $invoice->order->email }}')"                                                
+                                                onclick="openSendModal('{{ $invoice->id }}', '{{ $invoice->invoice_number }}', '{{ $invoice->order->email }}')"
                                                 class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">
                                                 📧 Odeslat fakturu
                                             </button>
@@ -189,7 +180,18 @@
                             </tbody>
                         </table>
                     </div>
-
+                    <form method="GET" action="{{ route('invoices.index') }}" class="mb-4 flex mt-5 items-center gap-2">
+                        <label for="per_page" class="text-sm text-gray-600">Zobrazit na stránku:</label>
+                        <select name="per_page" id="per_page"
+                            onchange="this.form.submit()"
+                            class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
+                            @foreach ([10, 20, 50, 100] as $num)
+                            <option value="{{ $num }}" {{ $perPage == $num ? 'selected' : '' }}>
+                                {{ $num }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </form>
                     <!-- Paginace -->
                     <div class="mt-6">
                         {{ $invoices->links() }}
