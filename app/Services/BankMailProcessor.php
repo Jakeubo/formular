@@ -131,20 +131,28 @@ class BankMailProcessor
 
         // ✅ Platba je nová – teď teprve kontrolujeme fakturu
         $invoice = Invoice::where('variable_symbol', $variableSymbol)->first();
+        if ($invoice && $amount !== null) {
+            $invoiceAmount = (float)$invoice->total_price;
 
-        if ($invoice && (float) $invoice->total_price == $amount) {
-            $status = mb_strtolower(trim($invoice->status));
+            // ✅ pokud zákazník zaplatil alespoň fakturovanou částku, bereme jako zaplaceno
+            if ($amount >= $invoiceAmount) {
+                $status = mb_strtolower(trim($invoice->status));
 
-            if ($status === 'shipped') {
-                Log::info("BankMail: faktura {$invoice->invoice_number} přeskočena – již odesláno");
-            } elseif ($status === 'paid') {
-                Log::info("BankMail: faktura {$invoice->invoice_number} již zaplacená, bez změny");
+                if ($status === 'shipped') {
+                    Log::info("BankMail: faktura {$invoice->invoice_number} přeskočena – již odesláno");
+                } elseif ($status === 'paid') {
+                    Log::info("BankMail: faktura {$invoice->invoice_number} již zaplacená, bez změny");
+                } else {
+                    $invoice->update([
+                        'status'  => 'paid',
+                        'paid_at' => now(),
+                    ]);
+                    $diff = number_format($amount - $invoiceAmount, 2, ',', ' ');
+                    Log::info("BankMail: faktura {$invoice->invoice_number} označena jako zaplacená (VS {$variableSymbol}), zaplaceno o {$diff} Kč víc");
+                }
             } else {
-                $invoice->update([
-                    'status'  => 'paid',
-                    'paid_at' => now(),
-                ]);
-                Log::info("BankMail: faktura {$invoice->invoice_number} označena jako zaplacená (VS {$variableSymbol})");
+                $diff = number_format($invoiceAmount - $amount, 2, ',', ' ');
+                Log::warning("BankMail: částka je o {$diff} Kč nižší – faktura {$invoice->invoice_number} zůstává nezaplacená");
             }
         }
 

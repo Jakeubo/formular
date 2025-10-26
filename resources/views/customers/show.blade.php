@@ -40,6 +40,7 @@
                         <p><strong>Výdejní místo:</strong> {{ $customer->carrier_address ?? '—' }}</p>
 
                         <p class="mt-4"><strong>IČO:</strong> {{ $customer->company_ico ?? '—' }}</p>
+                        <p><strong>DIČ:</strong> {{ $customer->company_dic ?? '—' }}</p>
                     </div>
 
                     <div class="flex flex-col gap-2">
@@ -86,6 +87,12 @@
                     <label class="block text-sm font-medium">IČO</label>
                     <input type="text" name="company_ico" value="{{ $customer->company_ico }}" 
                            maxlength="12" class="w-full border rounded px-3 py-2">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium">DIČ</label>
+                    <input type="text" name="company_dic" value="{{ $customer->company_dic }}" 
+                           maxlength="15" class="w-full border rounded px-3 py-2">
                 </div>
             </div>
 

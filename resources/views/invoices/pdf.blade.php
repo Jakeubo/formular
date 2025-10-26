@@ -207,9 +207,16 @@
                 {{ $invoice->order->zip }} {{ $invoice->order->city }}<br>
                 {{ $invoice->order->country ?? 'ČR' }}<br>
                 {{ $invoice->order->email }}<br>
-                @if(!empty($invoice->order) && !empty($invoice->order->company_ico))
-                <strong>IČO:</strong> {{ $invoice->order->company_ico }}
+                @if(!empty($invoice->order))
+                @if(!empty($invoice->order->company_ico))
+                <strong>IČO:</strong> {{ $invoice->order->company_ico }}<br>
                 @endif
+
+                @if(!empty($invoice->order->company_dic))
+                <strong>DIČ:</strong> {{ $invoice->order->company_dic }}<br>
+                @endif
+                @endif
+
 
             </p>
             @else

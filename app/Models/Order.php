@@ -22,7 +22,8 @@ class Order extends Model
         'carrier_address',
         'country',
         'public_token',
-        'company_ico'
+        'company_ico',
+        'company_dic'
     ];
     public function invoices()
     {

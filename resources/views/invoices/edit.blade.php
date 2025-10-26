@@ -70,57 +70,130 @@
                 </div>
 
                 <!-- Položky faktury -->
-                <div class="bg-white rounded-2xl shadow p-6 border border-gray-100">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Položky</h3>
-                    <table class="w-full text-sm border-collapse" id="items-table">
-                        <thead>
-                            <tr class="bg-gray-100 text-gray-700">
-                                <th class="px-2 py-2 text-center font-medium w-20">Kusy</th>
-                                <th class="px-3 py-2 text-left font-medium">Název položky</th>
-                                <th class="px-2 py-2 text-right font-medium w-32">Cena/ks</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @foreach($invoice->items as $i => $item)
-                            <tr>
-                                <td><input type="number" name="items[{{ $i }}][quantity]" value="{{ $item->quantity }}" class="w-16 border-gray-300 rounded-md"></td>
-                                <td><input type="text" name="items[{{ $i }}][description]" value="{{ $item->description }}" class="w-full border-gray-300 rounded-md"></td>
-                                <td><input type="number" step="0.01" name="items[{{ $i }}][unit_price]" value="{{ $item->unit_price }}" class="w-28 border-gray-300 rounded-md text-right"></td>
-                                <td><button type="button" onclick="this.closest('tr').remove()" class="text-red-600">✖</button></td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-6">💼 Položky faktury</h3>
 
-                    <button type="button" onclick="addItemRow()" class="mt-3 px-3 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700">+ Přidat položku</button>
+                    <div class="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+                        <table id="items-table" class="w-full text-sm">
+                            <thead class="bg-gray-50 text-gray-700 uppercase text-xs">
+                                <tr>
+                                    <th class="px-3 py-3 text-center font-semibold w-20">Kusy</th>
+                                    <th class="px-4 py-3 text-left font-semibold">Popis</th>
+                                    <th class="px-3 py-3 text-right font-semibold w-32">Cena/ks</th>
+                                    <th class="px-3 py-3 text-right font-semibold w-32">Celkem</th>
+                                    <th class="px-3 py-3 w-12"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-body" class="divide-y divide-gray-100">
+                                @foreach($invoice->items as $i => $item)
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="text-center py-3">
+                                        <input type="number" name="items[{{ $i }}][quantity]" value="{{ $item->quantity }}"
+                                            class="item-quantity w-16 border-gray-300 rounded-md text-center focus:ring-indigo-500 focus:border-indigo-500">
+                                    </td>
+                                    <td class="py-3">
+                                        <input type="text" name="items[{{ $i }}][description]" value="{{ $item->description }}"
+                                            class="w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                                    </td>
+                                    <td class="py-3 text-right">
+                                        <input type="number" step="0.01" name="items[{{ $i }}][unit_price]" value="{{ $item->unit_price }}"
+                                            class="item-price w-28 border-gray-300 rounded-md text-right focus:ring-indigo-500 focus:border-indigo-500">
+                                    </td>
+                                    <td class="py-3 text-right text-gray-800 font-semibold item-total">
+                                        {{ number_format($item->quantity * $item->unit_price, 2) }} Kč
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" onclick="removeRow(this)"
+                                            class="text-red-500 hover:text-red-700 transition">✕</button>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Součet + přidat položku -->
+                    <div class="flex flex-col sm:flex-row justify-between items-center mt-6 border-t border-gray-200 pt-4">
+                        <button type="button" onclick="addItemRow()"
+                            class="order-2 sm:order-1 mt-4 sm:mt-0 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg shadow-sm hover:bg-indigo-700 transition">
+                            <span class="text-lg">＋</span> Přidat položku
+                        </button>
+
+                        <div class="order-1 sm:order-2 text-2xl font-bold text-gray-900">
+                            Celkem: <span id="invoice-total" class="text-indigo-600">{{ number_format($invoice->total_price, 2) }}</span> Kč
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Uložit -->
-                <div class="flex justify-end">
-                    <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-xl shadow hover:bg-green-700">
+                <div class="flex justify-end mt-8">
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white text-lg font-semibold rounded-xl shadow-md hover:bg-green-700 transition">
                         💾 Uložit změny
                     </button>
                 </div>
+
             </form>
         </div>
     </div>
-
+    <div id="invoice-data" data-count="{{ count($invoice->items) }}"></div>
     <script>
-        let itemIndex = document.getElementById('items-table').dataset.count;
+        let itemIndex = parseInt(document.getElementById('invoice-data').dataset.count);
 
         function addItemRow() {
             const table = document.querySelector('#items-table tbody');
             const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50 transition';
             row.innerHTML = `
-            <td><input type="number" name="items[${itemIndex}][quantity]" value="1" class="w-16 border-gray-300 rounded-md"></td>
-            <td><input type="text" name="items[${itemIndex}][description]" value="" class="w-full border-gray-300 rounded-md"></td>
-            <td><input type="number" step="0.01" name="items[${itemIndex}][unit_price]" value="0" class="w-28 border-gray-300 rounded-md text-right"></td>
-            <td><button type="button" onclick="this.closest('tr').remove()" class="text-red-600">✖</button></td>
-        `;
+        <td class="text-center py-3">
+            <input type="number" name="items[${itemIndex}][quantity]" value="1"
+                class="item-quantity w-16 border-gray-300 rounded-md text-center focus:ring-indigo-500 focus:border-indigo-500">
+        </td>
+        <td class="py-3">
+            <input type="text" name="items[${itemIndex}][description]" value=""
+                class="w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+        </td>
+        <td class="py-3 text-right">
+            <input type="number" step="0.01" name="items[${itemIndex}][unit_price]" value="0"
+                class="item-price w-28 border-gray-300 rounded-md text-right focus:ring-indigo-500 focus:border-indigo-500">
+        </td>
+        <td class="py-3 text-right text-gray-800 font-semibold item-total">0.00 Kč</td>
+        <td class="text-center">
+            <button type="button" onclick="removeRow(this)"
+                class="text-red-500 hover:text-red-700 transition">✕</button>
+        </td>
+    `;
             table.appendChild(row);
             itemIndex++;
+            attachListeners(row);
+            recalcTotal();
         }
-    </script>
 
+        function removeRow(button) {
+            button.closest('tr').remove();
+            recalcTotal();
+        }
+
+        function attachListeners(row) {
+            const qtyInput = row.querySelector('.item-quantity');
+            const priceInput = row.querySelector('.item-price');
+            qtyInput.addEventListener('input', recalcTotal);
+            priceInput.addEventListener('input', recalcTotal);
+        }
+
+        function recalcTotal() {
+            let total = 0;
+            document.querySelectorAll('#items-table tbody tr').forEach(tr => {
+                const qty = parseFloat(tr.querySelector('.item-quantity')?.value || 0);
+                const price = parseFloat(tr.querySelector('.item-price')?.value || 0);
+                const subtotal = qty * price;
+                tr.querySelector('.item-total').textContent = subtotal.toFixed(2) + ' Kč';
+                total += subtotal;
+            });
+            document.getElementById('invoice-total').textContent = total.toFixed(2);
+        }
+
+        // při načtení připojíme eventy
+        document.querySelectorAll('#items-table tbody tr').forEach(attachListeners);
+    </script>
 </x-app-layout>
