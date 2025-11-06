@@ -394,14 +394,25 @@ class LabelController extends Controller
 
         // 🟢 carrier_id z objednávky, např. "B78419" → "78419"
         $carrierId = substr($order->carrier_id, 1);
-
+        // Log::debug('📦 Balíkovna debug ORDER data', [
+        //     'order_id'      => $order->id,
+        //     'first_name'    => $order->first_name,
+        //     'last_name'     => $order->last_name,
+        //     'zip'           => $order->zip,
+        //     'carrier_id'    => $order->carrier_id,
+        //     'carrier_clean' => substr($order->carrier_id, 1),
+        //     'city'          => $order->city,
+        //     'country'       => $order->country,
+        //     'phone'         => $order->phone,
+        //     'email'         => $order->email,
+        // ]);
         // 1. Vytvoření zásilky
         $body = [
             "parcelServiceHeader" => [
                 "parcelServiceHeaderCom" => [
                     "transmissionDate" => date("Y-m-d"),
                     "customerID"       => $customerId,
-                    "postCode" => $order->zip,
+                    "postCode" => '78353',
                     "locationNumber"   => 2
                 ],
                 "printParams" => [
@@ -453,12 +464,33 @@ class LabelController extends Controller
             ->withBody($jsonBody, 'application/json')
             ->post($urlService);
 
-        if ($response->failed()) {
-            return response()->json([
-                'error' => '❌ Balíkovna API error',
-                'body'  => $response->body()
-            ], 500);
+        // 🧩 Loguj vždy, i když HTTP kód je 200
+        Log::info('📦 Balíkovna odpověď', [
+            'status' => $response->status(),
+            'body'   => $response->body(),
+        ]);
+
+        // Pokud není JSON validní nebo chybí parcelCode → logni chybu ručně
+        if (!$response->ok()) {
+            Log::error('❌ Balíkovna HTTP error', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+            return response()->json(['error' => '❌ Balíkovna HTTP error'], 500);
         }
+
+        $json = $response->json();
+        $parcelCode = $json['responseHeader']['resultParcelData'][0]['parcelCode'] ?? null;
+
+        if (!$parcelCode) {
+            Log::warning('⚠️ Balíkovna nevrátila parcelCode', [
+                'response' => $json,
+                'payload'  => $body
+            ]);
+            return response()->json(['error' => '❌ Balíkovna nevrátila parcelCode.', 'response' => $json], 500);
+        }
+
+
 
         $json = $response->json();
         $parcelCode = $json['responseHeader']['resultParcelData'][0]['parcelCode'] ?? null;

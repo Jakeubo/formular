@@ -2,23 +2,26 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
 {
     /**
-     * Register services.
+     * The event listener mappings for the application.
+     *
+     * @var array<class-string, array<int, class-string>>
      */
-    public function register(): void
-    {
-        //
-    }
+    protected $listen = [
+        \App\Events\OrderShipped::class => [
+            \App\Listeners\ScheduleSatisfactionEmail::class,
+        ],
+    ];
 
     /**
-     * Bootstrap services.
+     * Register any events for your application.
      */
     public function boot(): void
     {
-        //
+        parent::boot();
     }
 }

@@ -12,6 +12,7 @@ use App\Models\Order;
 use App\Http\Controllers\SettingController;
 use Illuminate\Support\Facades\URL;
 use App\Models\ShippingMethod;
+use App\Http\Controllers\SettingsController;
 
 // 🏠 Domovská stránka – veřejný formulář pro objednávky
 Route::get('/', function () {
@@ -42,6 +43,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings/shipping', [SettingController::class, 'updateShipping'])->name('settings.shipping.update');
 
+    // pro odeslani mailu po objednavce
+    Route::post('/orders/{order}/shipped', [OrderController::class, 'markAsShipped'])
+        ->name('orders.markAsShipped');
     // 💳 Bankovní platby
     Route::post('/bank-payments/check', [BankPaymentController::class, 'check'])->name('bank-payments.check');
     Route::get('/bank-payments', [BankPaymentController::class, 'index'])->name('bank-payments.index');
@@ -53,6 +57,17 @@ Route::middleware(['auth'])->group(function () {
 
     // 👥 Zákazníci
     Route::resource('customers', CustomerController::class);
+
+    // log mailu
+    Route::get('/settings', [SettingController::class, 'index'])
+        ->name('settings.index')
+        ->middleware('auth');
+
+    // tlačítko v nastavení na log mailu
+    Route::post('/settings/update', [SettingController::class, 'updateSettings'])
+        ->name('settings.update')
+        ->middleware('auth');
+
 
     //změna statusu faktury
     Route::patch('/invoices/{invoice}/update-status', [InvoiceController::class, 'updateStatus'])

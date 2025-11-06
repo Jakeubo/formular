@@ -7,7 +7,7 @@ use App\Models\Order;
 use Illuminate\Support\Facades\Http;
 use App\Models\ShippingMethod;
 use Illuminate\Support\Str;
-
+use App\Events\OrderShipped;
 
 
 
@@ -182,5 +182,17 @@ class OrderController extends Controller
         Http::post($webhookUrl, ['content' => $content]);
 
         return back()->with('success', '✅ Děkujeme! Formulář byl úspěšně odeslán.');
+    }
+
+        public function markAsShipped(Order $order)
+    {
+        $order->status = 'shipped';
+        $order->shipped_at = now();
+        $order->save();
+
+        // 🔔 Vyvolání eventu
+        event(new OrderShipped($order));
+
+        return back()->with('success', 'Objednávka byla označena jako odeslaná.');
     }
 }

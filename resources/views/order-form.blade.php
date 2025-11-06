@@ -142,6 +142,9 @@
             <p id="selectedPoint" class="hidden px-3 py-2 text-sm sm:text-base rounded-lg bg-indigo-100 text-indigo-800 font-medium"></p>
             <p id="balikovnaSelected" class="hidden px-3 py-2 text-sm sm:text-base rounded-lg bg-pink-100 text-pink-700 font-medium"></p>
             <p id="pplSelected" class="hidden px-3 py-2 text-sm sm:text-base rounded-lg bg-blue-100 text-blue-700 font-medium"></p>
+            <p id="osobniSelected" class="hidden px-3 py-2 text-sm sm:text-base rounded-lg bg-yellow-100 text-yellow-700 font-medium">
+                📍 Osobní odběr: SushiHub, Sokolská 123, Olomouc
+            </p>
         </div>
 
         <!-- GDPR souhlas -->

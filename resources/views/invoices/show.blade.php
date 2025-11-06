@@ -90,6 +90,12 @@
                                     <dd class="text-gray-900">{{ $invoice->order->company_ico }}</dd>
                                 </div>
                                 @endif
+                                @if(optional($invoice->order)->company_dic)
+                                <div>
+                                    <dt class="font-medium">DIČ</dt>
+                                    <dd class="text-gray-900">{{ $invoice->order->company_dic }}</dd>
+                                </div>
+                                @endif
 
                             </dl>
 

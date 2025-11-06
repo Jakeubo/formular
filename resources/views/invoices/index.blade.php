@@ -159,7 +159,7 @@
 
                                         <!-- Dropdown -->
                                         <div id="dropdown-{{ $invoice->id }}"
-                                            class="hidden absolute right-0 mt-2 w-44 bg-white border rounded-xl shadow-lg z-10 overflow-hidden">
+                                            class="hidden absolute right-0 mt-2 mx-5 py-2 w-44 bg-white border rounded-xl shadow-lg z-10 overflow-hidden">
                                             <button type="button"
                                                 onclick="openSendModal('{{ $invoice->id }}', '{{ $invoice->invoice_number }}', '{{ $invoice->order->email }}')"
                                                 class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">
